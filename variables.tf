@@ -10,8 +10,21 @@ variable "ssh_public_key_path" {
   default     = "~/.ssh/id_rsa.pub"
 }
 
+
 variable "zone" {
   description = "Compute instance zone "
   type        = string
   default     = "us-west1-b"
+}
+
+variable "region" {
+  description = "Compute instance region"
+  type        = string
+  default     = "us-west1"
+}
+
+variable "project_id" {
+  description = "Project id "
+  type        = string
+  default     = ""
 }
