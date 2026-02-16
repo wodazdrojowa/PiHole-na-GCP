@@ -28,3 +28,8 @@ variable "project_id" {
   type        = string
   default     = ""
 }
+
+variable "machine_type" {
+  description = "Machine type"
+  type        = string
+}
