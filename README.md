@@ -1,2 +1,2 @@
 # TerraformTest1forGCP
-Test Terraform i ANSI le tworzacegoninstancje na GCP
+Test Terraform i Ansible tworzace instancje na GCP

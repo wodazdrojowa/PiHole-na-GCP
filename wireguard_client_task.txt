@@ -1,0 +1,55 @@
+---
+- name: Generate client {{ client_number }} private key
+  shell: wg genkey
+  register: client_private_key
+  changed_when: false
+
+- name: Generate client {{ client_number }} public key
+  shell: echo "{{ client_private_key.stdout }}" | wg pubkey
+  register: client_public_key
+  changed_when: false
+
+- name: Generate client {{ client_number }} preshared key
+  shell: wg genpsk
+  register: client_preshared_key
+  changed_when: false
+
+- name: Add client {{ client_number }} peer to server config
+  blockinfile:
+    path: /etc/wireguard/wg0.conf
+    marker: "# {mark} CLIENT {{ client_number }}"
+    block: |
+      
+      [Peer]
+      PublicKey = {{ client_public_key.stdout }}
+      PresharedKey = {{ client_preshared_key.stdout }}
+      AllowedIPs = 10.8.0.{{ client_number + 1 }}/32
+  notify: restart wireguard
+
+- name: Create clients directory
+  file:
+    path: /etc/wireguard/clients
+    state: directory
+    mode: '0700'
+
+- name: Create client {{ client_number }} configuration
+  copy:
+    content: |
+      [Interface]
+      PrivateKey = {{ client_private_key.stdout }}
+      Address = 10.8.0.{{ client_number + 1 }}/24
+      DNS = 10.8.0.1
+      
+      [Peer]
+      PublicKey = {{ wg_server_public_key.stdout }}
+      PresharedKey = {{ client_preshared_key.stdout }}
+      Endpoint = {{ ansible_default_ipv4.address }}:{{ wireguard_port }}
+      AllowedIPs = 0.0.0.0/0, ::/0
+      PersistentKeepalive = 25
+    dest: /etc/wireguard/clients/client{{ client_number }}.conf
+    mode: '0600'
+
+- name: Generate QR code for client {{ client_number }}
+  shell: qrencode -t ansiutf8 < /etc/wireguard/clients/client{{ client_number }}.conf > /etc/wireguard/clients/client{{ client_number }}.txt
+  args:
+    creates: /etc/wireguard/clients/client{{ client_number }}.txt
