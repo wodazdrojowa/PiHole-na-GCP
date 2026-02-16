@@ -1,2 +1,3 @@
 # Ignoruj wszystkie pliki z roszserzeniem tfvars
 *.tfvars
+variables.tf
