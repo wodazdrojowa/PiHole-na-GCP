@@ -85,7 +85,8 @@ resource "google_compute_instance" "pihole" {
   boot_disk {
     initialize_params {
       image = "ubuntu-os-cloud/ubuntu-2204-lts"
-      size  = 20
+      size  = 20    # 30GB is a maximum free size
+      type = "pd-standard"  # HDD is free tier, SSD is paid
     }
   }
 
