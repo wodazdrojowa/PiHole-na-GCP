@@ -1,5 +1,0 @@
-project_id   = "github-test-terraform-v1"
-region       = "us-west1"
-zone         = "us-west1-a"
-ssh_user     = "ansible"
-machine_type = "e2-micro"
