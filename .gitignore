@@ -1,3 +1,4 @@
 # Ignoruj wszystkie pliki z roszserzeniem tfvars
-*.tfvars
+terraform.tfvars
 variables.tf
+*.exe
