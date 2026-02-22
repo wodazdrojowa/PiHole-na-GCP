@@ -1,7 +1,7 @@
 variable "ssh_user" {
   description = "SSH username"
   type        = string
-  # default     = "ansible"
+  default     = "ansible"
 }
 
 variable "ssh_public_key_path" {
