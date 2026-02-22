@@ -3,6 +3,7 @@ terraform {
     google = {
       source  = "hashicorp/google"
       version = "~> 5.0"
+      credentials = file("/mnt/workspace/gcp-key.json")
     }
   }
 }
