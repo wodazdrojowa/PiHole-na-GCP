@@ -34,3 +34,8 @@ variable "machine_type" {
   type        = string
 
 }
+
+variable "machine_name" {
+  description = "Machine name"
+  type        = string
+}

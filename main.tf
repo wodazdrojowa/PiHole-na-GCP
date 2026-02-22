@@ -78,7 +78,7 @@ resource "google_compute_firewall" "pihole_wireguard" {
 
 # Compute instance
 resource "google_compute_instance" "pihole" {
-  name         = "pihole-server"
+  name         = var.machine_name
   machine_type = var.machine_type
   tags         = ["pihole"]
 

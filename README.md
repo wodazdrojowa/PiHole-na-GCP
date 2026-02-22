@@ -1,6 +1,8 @@
 # TerraformTest1forGCP
 Test Terraform i Ansible tworzace instancje na GCP
 
+What 
+
 
 
 Don't forget:
@@ -15,4 +17,3 @@ Disk:
     HDD only
 Transfer:
     1 GB of outbound data transfer from North America to all region destinations (excluding China and Australia) per month.
-    
