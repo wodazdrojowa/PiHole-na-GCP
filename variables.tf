@@ -25,7 +25,7 @@ variable "region" {
 variable "project_id" {
   description = "Project id "
   type        = string
-  default     = ""
+  default     = "github-test-terraform-v1"
 }
 
 variable "machine_type" {
