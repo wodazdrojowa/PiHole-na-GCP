@@ -3,13 +3,13 @@ terraform {
     google = {
       source  = "hashicorp/google"
       version = "~> 5.0"
-      credentials = file("/mnt/workspace/gcp-key.json")
     }
   }
 }
 
 provider "google" {
   project = var.project_id
+  credentials = file("/mnt/workspace/gcp-key.json")
   region  = var.region
   zone    = var.zone
 }
