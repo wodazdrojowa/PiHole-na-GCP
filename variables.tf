@@ -10,7 +10,6 @@ variable "ssh_public_key_path" {
   default     = "~/.ssh/id_rsa.pub"
 }
 
-
 variable "zone" {
   description = "Compute instance zone "
   type        = string
@@ -32,10 +31,11 @@ variable "project_id" {
 variable "machine_type" {
   description = "Machine type"
   type        = string
-
+  default     = "e2-micro"
 }
 
 variable "machine_name" {
   description = "Machine name"
   type        = string
+  default     = "pihole-server"
 }
