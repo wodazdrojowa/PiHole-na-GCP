@@ -1,6 +1,7 @@
+
 ---
 - name: Setup Pi-hole with WireGuard and Let's Encrypt
-  hosts: pihole
+  hosts: pihole-serwer
   become: yes
   vars:
     pihole_password: "{{ lookup('env', 'PIHOLE_PASSWORD') | default('ChangeMe123!', true) }}"
