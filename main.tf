@@ -122,3 +122,14 @@ output "instance_name" {
   value       = google_compute_instance.pihole.name
   description = "Name of the instance"
 }
+
+resource "local_file" "ansible_inventory" {
+  content = <<-EOF
+    [pihole-server]
+    pihole_server ansible_host=${google_compute_address.pihole_ip.address} ansible_user=ansible ansible_ssh_private_key_file=/mnt/workspace/id_ed25519
+
+    [pihole-server:vars]
+    ansible_python_interpreter=/usr/bin/python3
+  EOF
+  filename = "${path.module}/inventory.ini"
+}
