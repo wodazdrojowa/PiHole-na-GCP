@@ -27,3 +27,19 @@ jobs:
       run: |
         terraform init
         terraform apply -auto-approve
+
+- name: Setup SSH key
+      run: |
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > /tmp/id_ed25519
+        chmod 600 /tmp/id_ed25519
+
+    - name: Install Ansible
+      run: pip install ansible
+
+    - name: Run Ansible playbook
+      run: |
+        ansible-playbook pihole-setup.yml \
+          -i inventory.ini \
+          --private-key /tmp/id_ed25519
+      env:
+        PIHOLE_PASSWORD: ${{ secrets.PIHOLE_PASSWORD }}
