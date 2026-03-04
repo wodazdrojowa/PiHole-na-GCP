@@ -7,7 +7,7 @@ variable "ssh_user" {
 variable "ssh_public_key_path" {
   description = "Path to SSH public key"
   type        = string
-  default     = "/mnt/workspace/id_ed25519"
+  default     = "/mnt/workspace/id_ed25519.pub"
 }
 
 variable "zone" {
