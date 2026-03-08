@@ -1,5 +1,8 @@
+#!/bin/bash
+cat > /mnt/workspace/source/inventory.ini << EOF
 [pihole-server]
 pihole_server ansible_host=${TF_OUTPUT_server_ip} ansible_user=ansible ansible_ssh_private_key_file=/mnt/workspace/id_ed25519
 
 [pihole-server:vars]
 ansible_python_interpreter=/usr/bin/python3
+EOF
