@@ -5,7 +5,7 @@
     - name: Sprawdź adres połączenia
       debug:
         msg: |
-          inventory_hostname: {{ inventory_hostname }}
+          inventory_hostname: {{ inventory_hostname }} '\n'
           ansible_host: {{ ansible_host | default('NIE USTAWIONY!') }}
           INSTANCE_IP env: {{ lookup('env', 'INSTANCE_IP') }}
           TF_OUTPUT_server_ip env: {{ lookup('env', 'TF_OUTPUT_server_ip') }}
