@@ -13,7 +13,7 @@ variable "ssh_public_key_path" {
 variable "zone" {
   description = "Compute instance zone "
   type        = string
-  default     = "us-west1-b"
+  default     = "us-west1-a"
 }
 
 variable "region" {
@@ -31,7 +31,7 @@ variable "project_id" {
 variable "machine_type" {
   description = "Machine type"
   type        = string
-  default     = "f1-micro"
+  default     = "e2-micro"
 }
 
 variable "machine_name" {
