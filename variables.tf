@@ -13,13 +13,13 @@ variable "ssh_public_key_path" {
 variable "zone" {
   description = "Compute instance zone "
   type        = string
-  default     = "us-west1-a"
+  default     = "us-central1-a"
 }
 
 variable "region" {
   description = "Compute instance region"
   type        = string
-  default     = "us-west1"
+  default     = "us-central1"
 }
 
 variable "project_id" {
