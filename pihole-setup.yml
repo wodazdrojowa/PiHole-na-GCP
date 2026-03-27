@@ -1,3 +1,4 @@
+---
 - hosts: all
   gather_facts: no
   tasks:
@@ -9,7 +10,6 @@
           INSTANCE_IP env: {{ lookup('env', 'INSTANCE_IP') }}
           TF_OUTPUT_server_ip env: {{ lookup('env', 'TF_OUTPUT_server_ip') }}
           
----
 - name: Setup Pi-hole with WireGuard and Let's Encrypt
   hosts: pihole-server
   become: yes
