@@ -1,4 +1,14 @@
-
+- hosts: all
+  gather_facts: no
+  tasks:
+    - name: Sprawdź adres połączenia
+      debug:
+        msg: |
+          inventory_hostname: {{ inventory_hostname }}
+          ansible_host: {{ ansible_host | default('NIE USTAWIONY!') }}
+          INSTANCE_IP env: {{ lookup('env', 'INSTANCE_IP') }}
+          TF_OUTPUT_server_ip env: {{ lookup('env', 'TF_OUTPUT_server_ip') }}
+          
 ---
 - name: Setup Pi-hole with WireGuard and Let's Encrypt
   hosts: pihole-server
