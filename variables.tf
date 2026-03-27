@@ -31,7 +31,7 @@ variable "project_id" {
 variable "machine_type" {
   description = "Machine type"
   type        = string
-  default     = "e2-micro"
+  default     = "f1-micro"
 }
 
 variable "machine_name" {
