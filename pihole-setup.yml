@@ -11,7 +11,8 @@
           TF_OUTPUT_server_ip env: {{ lookup('env', 'TF_OUTPUT_server_ip') }}
           
 - name: Setup Pi-hole with WireGuard and Let's Encrypt
-  hosts: pihole-server
+#  hosts: pihole-server
+  hosts: INSTANCE_IP
   become: yes
   vars:
     pihole_password: "{{ lookup('env', 'PIHOLE_PASSWORD') | default('ChangeMe123!', true) }}"
