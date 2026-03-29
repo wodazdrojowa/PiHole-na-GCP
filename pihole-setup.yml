@@ -13,9 +13,10 @@
 - name: Setup Pi-hole with WireGuard and Let's Encrypt
 #  hosts: pihole-server
 #  hosts: {{ lookup('env', 'INSTANCE_IP') }}
-  hosts: os.environ.get("INSTANCE_IP")
+  hosts: 'os.environ.get("INSTANCE_IP")'
   become: yes
   vars:
+    ansible_host: "{{ lookup('env', 'INSTANCE_IP') }}"
     pihole_password: "{{ lookup('env', 'PIHOLE_PASSWORD') | default('ChangeMe123!', true) }}"
     domain_name: "pihole.example.com"  # Zmień na swoją domenę
     email: "admin@example.com"  # Zmień na swój email
