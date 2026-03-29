@@ -17,7 +17,8 @@ def main():
         "_meta": {
             "hostvars": {
                 "pihole_server": {
-                    "ansible_host": server_ip,
+#                    "ansible_host": server_ip,
+                    "ansible_host": os.environ.get("INSTANCE_IP")
                     "ansible_user": "ansible",
                     "ansible_ssh_private_key_file": "/mnt/workspace/id_ed25519",
                     "ansible_python_interpreter": "/usr/bin/python3",
