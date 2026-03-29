@@ -5,11 +5,11 @@ import sys
 
 def main():
     ip = os.environ.get("TF_OUTPUT_instance_ip", "")
-    server_ip = os.environ.get('TF_OUTPUT_server_ip', '')
+    #server_ip = os.environ.get('TF_OUTPUT_server_ip', '')
 
-    if not server_ip:
-        sys.stderr.write("ERROR: TF_OUTPUT_server_ip environment variable is not set\n")
-        sys.exit(1)
+    #if not server_ip:
+    #    sys.stderr.write("ERROR: TF_OUTPUT_server_ip environment variable is not set\n")
+    #    sys.exit(1)
 
     inventory = {
         "pihole_server_group": {
