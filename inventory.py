@@ -4,6 +4,7 @@ import os
 import sys
 
 def main():
+    ip = os.environ.get("TF_OUTPUT_instance_ip", "")
     server_ip = os.environ.get('TF_OUTPUT_server_ip', '')
 
     if not server_ip:
@@ -16,19 +17,23 @@ def main():
         },
         "_meta": {
             "hostvars": {
-                "pihole_server": {
-#                    "ansible_host": server_ip,
-                    "ansible_host": os.environ.get("INSTANCE_IP")
+                "pihole-server": {
+                    "ansible_host": ip,
+#                    "ansible_host": os.environ.get("INSTANCE_IP")
                     "ansible_user": "ansible",
                     "ansible_ssh_private_key_file": "/mnt/workspace/id_ed25519",
                     "ansible_python_interpreter": "/usr/bin/python3",
                     "ansible_ssh_common_args": "-o StrictHostKeyChecking=no"
                 }
             }
+        },
+        "all": {
+            "hosts": ["pihole-server"]
         }
     }
 
-    print(json.dumps(inventory, indent=2))
+#    print(json.dumps(inventory, indent=2))
+    print(json.dumps(inventory))
 
 if __name__ == '__main__':
     if len(sys.argv) == 2 and sys.argv[1] == '--list':
