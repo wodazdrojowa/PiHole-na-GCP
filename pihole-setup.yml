@@ -8,6 +8,7 @@
         name: "{{ lookup('env', 'INSTANCE_IP') }}"
         groups: pihole_servers
         ansible_user: "{{ lookup('env', 'SSH_USER') }}"
+        ansible_ssh_private_key_file: /mnt/workspace/ssh_key
 
 # Play 3: Setup Pi-hole — BEZ ansible_user w vars!
 - name: Setup Pi-hole with WireGuard and Let's Encrypt
