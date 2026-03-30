@@ -21,9 +21,8 @@
         groups: pihole_servers
         
 - name: Setup Pi-hole with WireGuard and Let's Encrypt
-#  hosts: pihole-server
-  hosts: "{{ lookup('env', 'INSTANCE_IP') }}"
-  become: yes
+  hosts:  pihole_servers
+  become: true
   vars:
     ansible_host: "{{ lookup('env', 'INSTANCE_IP') }}"
     pihole_password: "{{ lookup('env', 'PIHOLE_PASSWORD') | default('ChangeMe123!', true) }}"
