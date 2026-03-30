@@ -12,7 +12,7 @@
           
 - name: Setup Pi-hole with WireGuard and Let's Encrypt
 #  hosts: pihole-server
-  hosts: {{ lookup('env', 'INSTANCE_IP') }}
+  hosts: "{{ lookup('env', 'INSTANCE_IP') }}"
   become: yes
   vars:
     ansible_host: "{{ lookup('env', 'INSTANCE_IP') }}"
