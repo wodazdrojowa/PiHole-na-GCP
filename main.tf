@@ -126,7 +126,7 @@ output "instance_name" {
 resource "local_file" "ansible_inventory" {
   content = <<-EOF
     [pihole-server]
-    pihole-server ansible_host=${google_compute_address.pihole_ip.address} ansible_user=ansible ansible_ssh_private_key_file=/mnt/workspace/ssh_key/id_ed25519
+    pihole-server ansible_host=${google_compute_address.pihole_ip.address} ansible_user=ansible ansible_ssh_private_key_file=/mnt/workspace/ssh_key/ssh_public
 
     [pihole-server:vars]
     ansible_python_interpreter=/usr/bin/python3
