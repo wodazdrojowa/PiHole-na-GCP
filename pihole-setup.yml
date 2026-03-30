@@ -1,27 +1,29 @@
----
-- hosts: all
-  gather_facts: no
+# Play 1: Diagnostyka
+- name: Diagnostyka
+  hosts: all
+  gather_facts: false
   tasks:
     - name: Sprawdź adres połączenia
       debug:
         msg: |
-          inventory_hostname: {{ inventory_hostname }} '\n'
-          ansible_host: {{ ansible_host | default('NIE USTAWIONY!') }}
+          inventory_hostname: {{ inventory_hostname }}
+          ansible_host: {{ ansible_host }}
           INSTANCE_IP env: {{ lookup('env', 'INSTANCE_IP') }}
           TF_OUTPUT_server_ip env: {{ lookup('env', 'TF_OUTPUT_server_ip') }}
-          
-    - name: Add target host dynamically
-      hosts: localhost
-      connection: local
-      gather_facts: false
 
-      tasks:
-      - add_host:
-          name: "{{ lookup('env', 'INSTANCE_IP') }}"
-          groups: pihole_servers
-        
+# Play 2: Dodaj hosta dynamicznie
+- name: Add target host dynamically
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - add_host:
+        name: "{{ lookup('env', 'INSTANCE_IP') }}"
+        groups: pihole_servers
+
+# Play 3: Setup Pi-hole
 - name: Setup Pi-hole with WireGuard and Let's Encrypt
-  hosts:  pihole_servers
+  hosts: pihole_servers
   become: true
   vars:
     ansible_host: "{{ lookup('env', 'INSTANCE_IP') }}"
