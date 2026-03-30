@@ -11,11 +11,11 @@
           TF_OUTPUT_server_ip env: {{ lookup('env', 'TF_OUTPUT_server_ip') }}
           
     - name: Add target host dynamically
-        hosts: localhost
-        connection: local
-        gather_facts: false
+      hosts: localhost
+      connection: local
+      gather_facts: false
 
-     tasks:
+      tasks:
       - add_host:
           name: "{{ lookup('env', 'INSTANCE_IP') }}"
           groups: pihole_servers
