@@ -1,16 +1,3 @@
-# Play 1: Diagnostyka
-- name: Diagnostyka
-  hosts: all
-  gather_facts: false
-  tasks:
-    - name: Sprawdź adres połączenia
-      debug:
-        msg: |
-          inventory_hostname: {{ inventory_hostname }}
-          ansible_host: {{ ansible_host }}
-          INSTANCE_IP env: {{ lookup('env', 'INSTANCE_IP') }}
-          TF_OUTPUT_server_ip env: {{ lookup('env', 'TF_OUTPUT_server_ip') }}
-
 # Play 2: Dodaj hosta dynamicznie
 - name: Add target host dynamically
   hosts: localhost
@@ -20,18 +7,20 @@
     - name: Get GCP username from gcloud
       command: gcloud config get-value account
       register: gcp_account
-      
+      check_mode: false          # ← wymusza wykonanie nawet w --check
+
     - add_host:
         name: "{{ lookup('env', 'INSTANCE_IP') }}"
         groups: pihole_servers
+        ansible_user: "{{ gcp_account.stdout | replace('@', '_') | replace('.', '_') }}"
 
-# Play 3: Setup Pi-hole
+# Play 3: Setup Pi-hole — BEZ ansible_user w vars!
 - name: Setup Pi-hole with WireGuard and Let's Encrypt
   hosts: pihole_servers
   become: true
   vars:
     ansible_host: "{{ lookup('env', 'INSTANCE_IP') }}"
-    ansible_user: "{{ gcp_account.stdout | replace('@', '_') | replace('.', '_') }}"
+#    ansible_user: "{{ gcp_account.stdout | replace('@', '_') | replace('.', '_') }}"
     pihole_password: "{{ lookup('env', 'PIHOLE_PASSWORD') | default('ChangeMe123!', true) }}"
     domain_name: "pihole.example.com"  # Zmień na swoją domenę
     email: "admin@example.com"  # Zmień na swój email
