@@ -4,7 +4,7 @@ import os
 import sys
 
 def main():
-    ip = os.environ.get("TF_OUTPUT_instance_ip", "")
+    ip = os.environ.get('TF_OUTPUT_instance_ip', '')
     #server_ip = os.environ.get('TF_OUTPUT_server_ip', '')
 
     #if not server_ip:
