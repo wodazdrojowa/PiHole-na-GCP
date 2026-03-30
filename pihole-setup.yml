@@ -15,10 +15,10 @@
         connection: local
         gather_facts: false
 
-  tasks:
-    - add_host:
-        name: "{{ lookup('env', 'INSTANCE_IP') }}"
-        groups: pihole_servers
+     tasks:
+      - add_host:
+          name: "{{ lookup('env', 'INSTANCE_IP') }}"
+          groups: pihole_servers
         
 - name: Setup Pi-hole with WireGuard and Let's Encrypt
   hosts:  pihole_servers
