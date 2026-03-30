@@ -4,15 +4,10 @@
   connection: local
   gather_facts: false
   tasks:
-    - name: Get GCP username from gcloud
-      command: gcloud config get-value account
-      register: gcp_account
-      check_mode: false          # ← wymusza wykonanie nawet w --check
-
     - add_host:
         name: "{{ lookup('env', 'INSTANCE_IP') }}"
         groups: pihole_servers
-        ansible_user: "{{ gcp_account.stdout | replace('@', '_') | replace('.', '_') }}"
+        ansible_user: "{{ lookup('env', 'SSH_USER') }}"
 
 # Play 3: Setup Pi-hole — BEZ ansible_user w vars!
 - name: Setup Pi-hole with WireGuard and Let's Encrypt
