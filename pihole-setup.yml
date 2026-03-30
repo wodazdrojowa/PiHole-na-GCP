@@ -17,6 +17,10 @@
   connection: local
   gather_facts: false
   tasks:
+    - name: Get GCP username from gcloud
+      command: gcloud config get-value account
+      register: gcp_account
+      
     - add_host:
         name: "{{ lookup('env', 'INSTANCE_IP') }}"
         groups: pihole_servers
@@ -27,6 +31,7 @@
   become: true
   vars:
     ansible_host: "{{ lookup('env', 'INSTANCE_IP') }}"
+    ansible_user: "{{ gcp_account.stdout | replace('@', '_') | replace('.', '_') }}"
     pihole_password: "{{ lookup('env', 'PIHOLE_PASSWORD') | default('ChangeMe123!', true) }}"
     domain_name: "pihole.example.com"  # Zmień na swoją domenę
     email: "admin@example.com"  # Zmień na swój email
