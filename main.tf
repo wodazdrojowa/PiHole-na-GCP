@@ -4,6 +4,11 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 5.0"
     }
+
+      tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
   }
 }
 
@@ -77,6 +82,11 @@ resource "google_compute_firewall" "pihole_wireguard" {
   target_tags   = ["pihole"]
 }
 
+resource "tls_private_key" "ssh_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
 # Compute instance
 resource "google_compute_instance" "pihole" {
   name         = var.machine_name
@@ -97,10 +107,13 @@ resource "google_compute_instance" "pihole" {
       nat_ip = google_compute_address.pihole_ip.address
     }
   }
-
-  metadata = {
-    ssh-keys = "${var.ssh_user}:${file(var.ssh_public_key_path)}"
+metadata = {
+    ssh-keys = "${var.ssh_user}:${tls_private_key.ssh_key.public_key_openssh}"
   }
+
+#  metadata = {
+#    ssh-keys = "${var.ssh_user}:${file(var.ssh_public_key_path)}"
+#  }
 
   metadata_startup_script = <<-EOF
     #!/bin/bash
@@ -121,6 +134,17 @@ output "instance_ip" {
 output "instance_name" {
   value       = google_compute_instance.pihole.name
   description = "Name of the instance"
+}
+
+output "ssh_public_key" {
+  value       = tls_private_key.ssh_key.public_key_openssh
+  description = "Public SSH key for Pi-hole instance"
+}
+
+output "ssh_private_key" {
+  value       = tls_private_key.ssh_key.private_key_pem
+  sensitive   = true
+  description = "Private SSH key - use to connect via SSH"
 }
 
 resource "local_file" "ansible_inventory" {
