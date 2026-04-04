@@ -107,9 +107,9 @@ resource "google_compute_instance" "pihole" {
       nat_ip = google_compute_address.pihole_ip.address
     }
   }
-metadata = {
-    ssh-keys = "${var.ssh_user}:${tls_private_key.ssh_key.public_key_openssh}"
-  }
+#metadata = {
+#    ssh-keys = "${var.ssh_user}:${tls_private_key.ssh_key.public_key_openssh}"
+#  }
 
 #  metadata = {
 #    ssh-keys = "${var.ssh_user}:${file(var.ssh_public_key_path)}"
