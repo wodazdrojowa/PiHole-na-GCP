@@ -158,25 +158,13 @@ output "instance_name" {
   description = "Name of the instance"
 }
 
-#output "ssh_public_key" {
-#  value       = tls_private_key.ssh_key.public_key_openssh
-#  description = "Public SSH key for Pi-hole instance"
-#}
-
-#output "ssh_private_key" {
-#  value       = tls_private_key.ssh_key.private_key_pem
-#  sensitive   = true
-#  description = "Private SSH key - use to connect via SSH"
-#}
-
 resource "local_file" "ansible_inventory" {
-  content = <<-EOF
+  filename = "./inventory.ini"
+  content  = <<-EOT
     [pihole-server]
-#    pihole-server ansible_host=${google_compute_address.pihole_ip.address} ansible_user=ansible ansible_ssh_private_key_file=/mnt/workspace/ssh_key/ssh_public
-   pihole-server ansible_host=${google_compute_address.pihole_ip.address} ansible_user=
+    pihole-server ansible_host=${google_compute_address.pihole_ip.address} ansible_user=${google_os_login_ssh_public_key.ansible.user}
 
     [pihole-server:vars]
     ansible_python_interpreter=/usr/bin/python3
-  EOF
-  filename = "${path.module}/inventory.ini"
+  EOT
 }
