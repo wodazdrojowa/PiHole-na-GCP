@@ -82,10 +82,27 @@ resource "google_compute_firewall" "pihole_wireguard" {
   target_tags   = ["pihole"]
 }
 
-#resource "tls_private_key" "ssh_key" {
-#  algorithm = "RSA"
-#  rsa_bits  = 4096
-#}
+# 1. Generowanie pary kluczy SSH
+resource "tls_private_key" "ansible_ssh" {
+  algorithm = "ED25519"
+}
+
+# 2. Pobranie tożsamości service account
+data "google_client_openid_userinfo" "me" {
+}
+
+# 3. Rejestracja klucza publicznego w OS Login
+resource "google_os_login_ssh_public_key" "ansible" {
+  user = data.google_client_openid_userinfo.me.email
+  key  = tls_private_key.ansible_ssh.public_key_openssh
+}
+
+# 4. Nadanie roli OS Login (używa zmiennej)
+resource "google_project_iam_member" "os_login_admin" {
+  project = "github-test-terraform-v1"
+  role    = "roles/compute.osAdminLogin"
+  member  = "user:${var.os_login_user_email}"
+}
 
 # Compute instance
 resource "google_compute_instance" "pihole" {
