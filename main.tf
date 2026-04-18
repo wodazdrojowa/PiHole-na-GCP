@@ -168,3 +168,13 @@ resource "local_file" "ansible_inventory" {
     ansible_python_interpreter=/usr/bin/python3
   EOT
 }
+
+# Pobierz dane service account z unique_id
+data "google_service_account" "spacelift" {
+  account_id = "service-account-for-spacelift"
+}
+
+# Zmień output — POSIX username zamiast emaila
+output "os_login_user" {
+  value = "sa_${data.google_service_account.spacelift.unique_id}"
+}
