@@ -1,3 +1,8 @@
+variable "os_login_user_email" {
+  description = "wodazdrojowa@gmail.com"
+  type        = string
+}
+
 variable "ssh_user" {
   description = "SSH username"
   type        = string
