@@ -175,6 +175,6 @@ data "google_service_account" "spacelift" {
 }
 
 # Zmień output — POSIX username zamiast emaila
-#output "os_login_user" {
-#  value = "sa_${data.google_service_account.spacelift.unique_id}"
-#}
+output "os_login_user" {
+  value = "sa_${data.google_service_account.spacelift.unique_id}"
+}
