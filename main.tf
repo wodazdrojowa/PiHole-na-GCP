@@ -136,7 +136,7 @@ resource "google_compute_instance" "pihole" {
   metadata_startup_script = <<-EOF
     #!/bin/bash
     apt-get update
-    apt-get install -y python3 python3-pip mc
+    apt-get install -y python3 python3-pip
   EOF
 
   service_account {
