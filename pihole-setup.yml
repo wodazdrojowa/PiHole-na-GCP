@@ -16,30 +16,11 @@
   become: true
   vars:
     ansible_host: "{{ lookup('env', 'INSTANCE_IP') }}"
-#    ansible_user: "{{ gcp_account.stdout | replace('@', '_') | replace('.', '_') }}"
     pihole_password: "{{ lookup('env', 'PIHOLE_PASSWORD') | default('ChangeMe123!', true) }}"
     domain_name: "pihole.example.com"  # Zmień na swoją domenę
     email: "admin@example.com"  # Zmień na swój email
     wireguard_port: 51820
     wireguard_clients: 5
-#    ssh_key_path: "/tmp/ssh_private_key.pem"
-
-  pre_tasks:
- #   - name: Save SSH private key from Terraform output
- #     delegate_to: localhost
- #     become: no
- #     block:
- #       - name: Write private key to file
- #         copy:
- #           content: "{{ lookup('env', 'TF_OUTPUT_ssh_private_key') }}"
- #           dest: "{{ ssh_key_path }}"
- #           mode: '0600'
-
-  #      - name: Set SSH key as connection parameter
-  #        set_fact:
-  #          ansible_ssh_private_key_file: "{{ ssh_key_path }}"
-  #environment:
-  #  ANSIBLE_SSH_PRIVATE_KEY_FILE: "{{ ssh_key_path }}"
 
   tasks:
     - name: Update apt cache
