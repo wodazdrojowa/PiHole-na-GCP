@@ -2,3 +2,7 @@
 terraform.tfvars
 variables.tf
 *.exe
+ansible_ssh_key
+*.tfstate
+*.tfstate.backup
+.terraform/
