@@ -267,7 +267,9 @@
     - name: restart lighttpd
       systemd:
         name: lighttpd
-        state: restarted# Play 2: Dodaj hosta dynamicznie
+        state: restarted
+        
+# Play 2: Dodaj hosta dynamicznie
 - name: Add target host dynamically
   hosts: localhost
   connection: local
