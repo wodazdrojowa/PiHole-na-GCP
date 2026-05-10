@@ -157,15 +157,25 @@ output "instance_name" {
   value       = google_compute_instance.pihole.name
   description = "Name of the instance"
 }
+# Zapis klucza prywatnego do pliku (dla Ansible)
+resource "local_file" "ansible_ssh_private_key" {
+  filename        = "./ansible_ssh_key"
+  content         = tls_private_key.ansible_ssh.private_key_openssh
+  file_permission = "0600"
+}
 
+# Inventory z poprawnym OS Login username
 resource "local_file" "ansible_inventory" {
   filename = "./inventory.ini"
   content  = <<-EOT
     [pihole-server]
-    pihole-server ansible_host=${google_compute_address.pihole_ip.address} ansible_user=${google_os_login_ssh_public_key.ansible.user}
+    pihole-server ansible_host=${google_compute_address.pihole_ip.address}
 
     [pihole-server:vars]
+    ansible_user=sa_${data.google_service_account.spacelift.unique_id}
     ansible_python_interpreter=/usr/bin/python3
+    ansible_ssh_private_key_file=./ansible_ssh_key
+    ansible_ssh_common_args=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
   EOT
 }
 
