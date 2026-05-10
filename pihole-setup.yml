@@ -136,6 +136,7 @@
         src: /etc/nginx/sites-available/pihole
         dest: /etc/nginx/sites-enabled/pihole
         state: link
+        force: true   
       notify: restart nginx
 
     - name: Remove default Nginx site
