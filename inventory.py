@@ -4,7 +4,8 @@ import os
 import sys
 
 def main():
-ip = os.environ.get('INSTANCE_IP', '')
+    ip = os.environ.get('INSTANCE_IP', '')
+
     inventory = {
         "pihole_server_group": {
             "hosts": ["pihole-server"],
