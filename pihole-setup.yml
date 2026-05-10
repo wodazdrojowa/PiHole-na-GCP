@@ -145,18 +145,18 @@
         state: absent
       notify: restart nginx
 
-    - name: Change lighttpd port to 8080
-      lineinfile:
-        path: /etc/lighttpd/lighttpd.conf
-        regexp: '^server.port\s*='
-        line: 'server.port = 8080'
-      notify: restart lighttpd
+#    - name: Change lighttpd port to 8080
+#      lineinfile:
+#        path: /etc/lighttpd/lighttpd.conf
+#        regexp: '^server.port\s*='
+#        line: 'server.port = 8080'
+#      notify: restart lighttpd
 
-    - name: Start and enable lighttpd
-      systemd:
-        name: lighttpd
-        state: started
-        enabled: yes
+ #   - name: Start and enable lighttpd
+ #     systemd:
+ #       name: lighttpd
+ #       state: started
+ #       enabled: yes
 
     # Let's Encrypt
     - name: Obtain Let's Encrypt certificate
