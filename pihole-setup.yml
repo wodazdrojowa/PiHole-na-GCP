@@ -79,11 +79,11 @@
       when: not pihole_installed.stat.exists
 
     # Nginx Configuration
-    - name: Stop lighttpd to free port 80
-      systemd:
-        name: lighttpd
-        state: stopped
-        enabled: no
+    #- name: Stop lighttpd to free port 80
+    #  systemd:
+    #    name: lighttpd
+    #    state: stopped
+    #    enabled: no
 
     - name: Configure Nginx for Pi-hole
       copy:
