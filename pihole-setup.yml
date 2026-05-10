@@ -281,7 +281,7 @@
         ansible_user: "{{ lookup('env', 'SSH_USER') }}"
         ansible_ssh_private_key_file: "/mnt/workspace/id_ed25519"
         ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
-
+        
 # Play 3: Setup Pi-hole — BEZ ansible_user w vars!
 - name: Setup Pi-hole with WireGuard and Let's Encrypt
   hosts: pihole_servers
