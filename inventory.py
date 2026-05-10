@@ -20,7 +20,8 @@ ip = os.environ.get('INSTANCE_IP', '')
                 "pihole-server": {
                     "ansible_host": ip,
 #                    "ansible_host": os.environ.get("INSTANCE_IP")
-                    "ansible_user": "ansible",
+                    "ansible_user": os.environ.get('SSH_USER', 'ansible'),
+ #                   "ansible_user": "ansible",
 #                    "ansible_ssh_private_key_file": "/mnt/workspace/id_ed25519",
                     "ansible_python_interpreter": "/usr/bin/python3",
                     "ansible_ssh_common_args": "-o StrictHostKeyChecking=no"
