@@ -200,7 +200,7 @@
         mode: '0600'
 
     - name: Generate WireGuard client configurations
-      include_tasks: wireguard_client.j2
+      include_tasks: wireguard_client.yml
       loop: "{{ range(1, wireguard_clients + 1) | list }}"
       loop_control:
         loop_var: client_number
@@ -465,7 +465,7 @@
       changed_when: false
 
     - name: Create WireGuard server configuration
-      template:
+      copy:
         content: |
           [Interface]
           Address = 10.8.0.1/24
