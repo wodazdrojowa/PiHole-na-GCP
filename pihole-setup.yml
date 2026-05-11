@@ -37,6 +37,7 @@
           - wireguard-tools
           - qrencode
           - iptables-persistent
+          - mc
         state: present
         update_cache: yes
 
