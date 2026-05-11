@@ -37,7 +37,6 @@
           - wireguard-tools
           - qrencode
           - iptables-persistent
-          - mc
         state: present
 
     # Pi-hole Installation
@@ -316,6 +315,7 @@
           - wireguard-tools
           - qrencode
           - iptables-persistent
+          - mc
         state: present
 
     # Pi-hole Installation
