@@ -1,10 +1,40 @@
-[Interface]
-PrivateKey = {{ client_private_key }}
-Address = {{ client_ip }}/32
-DNS = {{ wireguard_server_ip }}
+# wireguard_client.yml
+- name: "Generate client {{ client_number }} private key"
+  shell: wg genkey
+  register: "client_private_key_{{ client_number }}"
+  changed_when: false
 
-[Peer]
-PublicKey = {{ server_public_key }}
-Endpoint = {{ server_public_ip }}:51820
-AllowedIPs = 0.0.0.0/0
-PersistentKeepalive = 25
+- name: "Generate client {{ client_number }} public key"
+  shell: echo "{{ vars['client_private_key_' ~ client_number].stdout }}" | wg pubkey
+  register: "client_public_key_{{ client_number }}"
+  changed_when: false
+
+- name: "Create client {{ client_number }} config directory"
+  file:
+    path: /etc/wireguard/clients
+    state: directory
+    mode: '0700'
+
+- name: "Write client {{ client_number }} configuration"
+  copy:
+    content: |
+      [Interface]
+      PrivateKey = {{ vars['client_private_key_' ~ client_number].stdout }}
+      Address = 10.8.0.{{ client_number + 1 }}/24
+      DNS = 10.8.0.1
+
+      [Peer]
+      PublicKey = {{ wg_server_public_key.stdout }}
+      Endpoint = {{ ansible_default_ipv4.address }}:{{ wireguard_port }}
+      AllowedIPs = 0.0.0.0/0
+    dest: "/etc/wireguard/clients/client{{ client_number }}.conf"
+    mode: '0600'
+
+- name: "Add client {{ client_number }} to server config"
+  blockinfile:
+    path: /etc/wireguard/wg0.conf
+    marker: "# {mark} CLIENT {{ client_number }}"
+    block: |
+      [Peer]
+      PublicKey = {{ vars['client_public_key_' ~ client_number].stdout }}
+      AllowedIPs = 10.8.0.{{ client_number + 1 }}/32
