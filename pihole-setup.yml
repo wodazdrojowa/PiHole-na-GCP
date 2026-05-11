@@ -38,6 +38,7 @@
           - qrencode
           - iptables-persistent
         state: present
+        update_cache: yes
 
     # Pi-hole Installation
     - name: Check if Pi-hole is already installed
