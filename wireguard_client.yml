@@ -33,7 +33,17 @@
   blockinfile:
     path: /etc/wireguard/wg0.conf
     marker: "# {mark} CLIENT {{ client_number }}"
+    create: yes  # <-- This will create the file if missing
+    mode: 0600
     block: |
       [Peer]
       PublicKey = {{ client_public_key.stdout }}
       AllowedIPs = 10.8.0.{{ client_number + 1 }}/32
+
+
+
+
+
+
+
+
