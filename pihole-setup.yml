@@ -212,6 +212,7 @@
         name: wg-quick@wg0
         state: started
         enabled: yes
+        check_mode: false
 
     # Firewall Configuration
     - name: Configure UFW defaults
