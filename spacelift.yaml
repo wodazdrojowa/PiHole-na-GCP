@@ -1,0 +1,6 @@
+stack:
+  steps:
+    plan:
+      - echo "Skipping dry-run"
+    apply:
+      - ansible-playbook -i inventory.py pihole-setup.yml
