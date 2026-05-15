@@ -297,6 +297,7 @@
         wg-quick up wg0 || true
         # Verify it's running
         sleep 1
+#        ip link show wg0 | grep -q "UP" && echo "WireGuard started successfully" || echo "WireGuard already running"
         ip link show wg0 | grep -q "UP" && echo "WireGuard started successfully" || echo "WireGuard already running"
       register: wg_start_result
       when: wg_already_running.rc != 0
