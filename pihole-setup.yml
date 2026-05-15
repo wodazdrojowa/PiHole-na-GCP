@@ -111,6 +111,8 @@
       get_url:
         url: "{{ pihole_installer_url }}"
         dest: /tmp/pihole-install.sh
+        headers:
+          User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
         mode: '0755'
       when: not pihole_installed.stat.exists
 
