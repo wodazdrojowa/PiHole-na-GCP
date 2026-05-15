@@ -12,7 +12,7 @@
         ansible_ssh_private_key_file: "{{ lookup('env', 'SSH_KEY_PATH') | default('/mnt/workspace/id_ed25519', true) }}"
         ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
       vars:
-        - instance_ip: "{{ lookup('env', 'INSTANCE_IP') }}"
+        instance_ip: "{{ lookup('env', 'INSTANCE_IP') }}"
       failed_when: not instance_ip
       register: host_added
 
