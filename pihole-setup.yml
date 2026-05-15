@@ -59,8 +59,9 @@
         update_cache: yes
       register: apt_install_result
       retries: 3
-      delay: 10
+      delay: 30
       until: apt_install_result is succeeded
+      timeout: 300  # ← 5 minut na instalację
       failed_when:
         - apt_install_result is failed
         - '"Unable to locate package" in apt_install_result.stderr or "E: " in apt_install_result.stderr'
@@ -80,7 +81,7 @@
         update_cache: yes
       when: wg_check.rc != 0
       retries: 3
-      delay: 10
+      delay: 30
       until: wg_go_result is succeeded
       register: wg_go_result
       ignore_errors: yes
