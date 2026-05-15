@@ -107,16 +107,12 @@
       failed_when: false
       register: mc_install_fallback
 
-    - name: Download Pi-hole installer
-      get_url:
-        url: "{{ pihole_installer_url }}"
-        dest: "/tmp/basic-install.sh"
-        mode: '0755'
-        force: yes
+
+    - name: Download Pi-hole installer via curl
+      shell: "curl -L {{ pihole_installer_url }} -o /tmp/basic-install.sh"
+      args:
+        creates: /tmp/basic-install.sh
       register: download_result
-      # Jeśli nadal masz 405, dodaj poniższe:
-      # headers:
-      #   User-Agent: "Mozilla/5.0"
       when: not pihole_installed.stat.exists
 
     - name: Create Pi-hole setup vars file
