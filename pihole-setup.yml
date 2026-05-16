@@ -67,10 +67,17 @@
         state: present
         update_cache: yes
       register: apt_core_result
-      retries: 3
+      retries: 4
       delay: 300
       until: apt_core_result is succeeded
       timeout: 3600
+
+    - name: Update and upgrade apt packages
+      become: true
+      apt:
+        upgrade: yes
+        update_cache: yes
+      cache_valid_time: 86400 #One day
 
     - name: Show core packages installation result
       debug:
