@@ -75,8 +75,9 @@
     - name: Update and upgrade apt packages
       become: true
       apt:
-        upgrade: yes
-        update_cache: yes
+       update_cache: yes
+       cache_valid_time: 3600
+       upgrade: dist  # Optional: Adds the upgrade action if you want to update packages too
       cache_valid_time: 86400 #One day
 
     - name: Show core packages installation result
