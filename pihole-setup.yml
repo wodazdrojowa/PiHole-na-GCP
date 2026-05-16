@@ -35,12 +35,46 @@
         delay: 10
         timeout: 120
 
+    - name: Gather system info for diagnostics
+      debug:
+        msg: |
+          OS: {{ ansible_os_family }}
+          Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Kernel: {{ ansible_kernel }}
+
+    - name: Show Ubuntu release info
+      shell: lsb_release -a || cat /etc/os-release
+      changed_when: false
+      register: ubuntu_info
+
+    - name: Show Ubuntu release
+      debug:
+        msg: "{{ ubuntu_info.stdout }}"
+
     - name: Update apt cache
       apt:
         update_cache: yes
         cache_valid_time: 3600
 
-    - name: Install required packages
+    - name: Check available packages
+      shell: apt-cache search wireguard | grep -E '^wireguard' || true
+      changed_when: false
+      register: available_wireguard
+
+    - name: Show available wireguard packages
+      debug:
+        msg: "{{ available_wireguard.stdout_lines }}"
+
+    - name: Check available packages mc
+      shell: apt-cache search mc | grep -E '^mc ' || true
+      changed_when: false
+      register: available_mc
+
+    - name: Show available mc packages
+      debug:
+        msg: "{{ available_mc.stdout_lines }}"
+
+    - name: Install core required packages
       apt:
         name:
           - curl
@@ -50,21 +84,48 @@
           - certbot
           - python3-certbot-nginx
           - nginx
-          - wireguard
           - wireguard-tools
           - qrencode
           - iptables-persistent
-          - mc
         state: present
         update_cache: yes
-      register: apt_install_result
+      register: apt_core_result
       retries: 3
       delay: 30
-      until: apt_install_result is succeeded
-      timeout: 300  # ← 5 minut na instalację
-      failed_when:
-        - apt_install_result is failed
-        - '"Unable to locate package" in apt_install_result.stderr or "E: " in apt_install_result.stderr'
+      until: apt_core_result is succeeded
+      timeout: 300
+
+    - name: Install optional packages (wireguard, mc)
+      apt:
+        name:
+          - wireguard
+          - mc
+        state: present
+      ignore_errors: yes
+      register: apt_optional_result
+
+    - name: Show installation errors (if any)
+      debug:
+        msg: |
+          Return code: {{ apt_optional_result.rc }}
+          Stdout: {{ apt_optional_result.stdout }}
+          Stderr: {{ apt_optional_result.stderr }}
+          Stdout lines: {{ apt_optional_result.stdout_lines | default([]) }}
+          Stderr lines: {{ apt_optional_result.stderr_lines | default([]) }}
+
+    - name: Verify installed packages
+      shell: |
+        echo "=== Checking wireguard ===" && (which wg && echo "✓ wireguard installed" || echo "✗ wireguard NOT found") && echo ""
+        echo "=== Checking wireguard-tools ===" && (dpkg -l | grep wireguard-tools || echo "✗ wireguard-tools NOT found") && echo ""
+        echo "=== Checking mc ===" && (which mc && echo "✓ mc installed" || echo "✗ mc NOT found") && echo ""
+        echo "=== APT repository info ===" && grep -r "wireguard" /etc/apt/sources.list* || echo "No wireguard PPAs found"
+      changed_when: false
+      failed_when: false
+      register: package_verification
+
+    - name: Show package verification
+      debug:
+        msg: "{{ package_verification.stdout }}"
 
     - name: Check if wg command is available
       shell: which wg
