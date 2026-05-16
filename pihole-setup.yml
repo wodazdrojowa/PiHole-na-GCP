@@ -95,6 +95,11 @@
       until: apt_core_result is succeeded
       timeout: 300
 
+    - name: Show core packages installation result
+      debug:
+        var: apt_core_result
+        verbosity: 1
+
     - name: Install optional packages (wireguard, mc)
       apt:
         name:
@@ -106,12 +111,8 @@
 
     - name: Show installation errors (if any)
       debug:
-        msg: |
-          Return code: {{ apt_optional_result.rc }}
-          Stdout: {{ apt_optional_result.stdout }}
-          Stderr: {{ apt_optional_result.stderr }}
-          Stdout lines: {{ apt_optional_result.stdout_lines | default([]) }}
-          Stderr lines: {{ apt_optional_result.stderr_lines | default([]) }}
+        var: apt_optional_result
+        verbosity: 1
 
     - name: Verify installed packages
       shell: |
