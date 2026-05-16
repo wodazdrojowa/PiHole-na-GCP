@@ -78,7 +78,7 @@
        update_cache: yes
        cache_valid_time: 3600
        upgrade: dist  # Optional: Adds the upgrade action if you want to update packages too
-      cache_valid_time: 86400 #One day
+       cache_valid_time: 86400 #One day
 
     - name: Show core packages installation result
       debug:
