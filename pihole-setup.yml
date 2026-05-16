@@ -35,13 +35,6 @@
         delay: 10
         timeout: 120
 
-    - name: Gather system info for diagnostics
-      debug:
-        msg: |
-          OS: {{ ansible_os_family }}
-          Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}
-          Kernel: {{ ansible_kernel }}
-
     - name: Show Ubuntu release info
       shell: lsb_release -a || cat /etc/os-release
       changed_when: false
@@ -56,24 +49,6 @@
         update_cache: yes
         cache_valid_time: 3600
 
-    - name: Check available packages
-      shell: apt-cache search wireguard | grep -E '^wireguard' || true
-      changed_when: false
-      register: available_wireguard
-
-    - name: Show available wireguard packages
-      debug:
-        msg: "{{ available_wireguard.stdout_lines }}"
-
-    - name: Check available packages mc
-      shell: apt-cache search mc | grep -E '^mc ' || true
-      changed_when: false
-      register: available_mc
-
-    - name: Show available mc packages
-      debug:
-        msg: "{{ available_mc.stdout_lines }}"
-
     - name: Install core required packages
       apt:
         name:
@@ -87,6 +62,8 @@
           - wireguard-tools
           - qrencode
           - iptables-persistent
+          - wireguard
+          - mc
         state: present
         update_cache: yes
       register: apt_core_result
@@ -100,64 +77,10 @@
         var: apt_core_result
         verbosity: 1
 
-    - name: Install optional packages (wireguard, mc)
-      apt:
-        name:
-          - wireguard
-          - mc
-        state: present
-      ignore_errors: yes
-      register: apt_optional_result
-
     - name: Show installation errors (if any)
       debug:
         var: apt_optional_result
         verbosity: 1
-
-    - name: Verify installed packages
-      shell: |
-        echo "=== Checking wireguard ===" && (which wg && echo "✓ wireguard installed" || echo "✗ wireguard NOT found") && echo ""
-        echo "=== Checking wireguard-tools ===" && (dpkg -l | grep wireguard-tools || echo "✗ wireguard-tools NOT found") && echo ""
-        echo "=== Checking mc ===" && (which mc && echo "✓ mc installed" || echo "✗ mc NOT found") && echo ""
-        echo "=== APT repository info ===" && grep -r "wireguard" /etc/apt/sources.list* || echo "No wireguard PPAs found"
-      changed_when: false
-      failed_when: false
-      register: package_verification
-
-    - name: Show package verification
-      debug:
-        msg: "{{ package_verification.stdout }}"
-
-    - name: Check if wg command is available
-      shell: which wg
-      register: wg_check
-      changed_when: false
-      failed_when: false
-
-    - name: Install wireguard-go if wg not available (fallback)
-      apt:
-        name:
-          - wireguard-go
-          - wireguard-tools
-        state: present
-        update_cache: yes
-      when: wg_check.rc != 0
-      retries: 3
-      delay: 30
-      until: wg_go_result is succeeded
-      register: wg_go_result
-      ignore_errors: yes
-
-    - name: Verify WireGuard installation after fallback
-      shell: |
-        if command -v wg &> /dev/null; then
-          echo "✓ WireGuard tools available"
-          wg --version || true
-        else
-          echo "⚠ WireGuard tools not found"
-        fi
-      changed_when: false
-      failed_when: false
 
     - name: Check if Pi-hole is already installed
       stat:
