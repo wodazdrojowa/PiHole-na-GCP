@@ -152,7 +152,7 @@
       LIGHTTPD_ENABLED=true
       WEBPASSWORD={{ pihole_password }}
       BLOCKING_ENABLED=true
-      pihole_ipv4_address: "192.168.1.100/24"
+      pihole_ipv4_address="192.168.1.100/24"
 
       roles:
         - geerlingguy.pihole
