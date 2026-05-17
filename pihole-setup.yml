@@ -122,7 +122,7 @@
           BLOCKING_ENABLED=true
         dest: /tmp/setupVars.conf
       when: not pihole_installed.stat.exists
-      no_log: true
+      no_log: false
 
     - name: Install Pi-hole
       shell: |
