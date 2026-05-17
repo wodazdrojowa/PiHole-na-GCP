@@ -1,0 +1,3 @@
+stack:
+  ansible:
+    apply_check_mode: false
