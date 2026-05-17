@@ -1,3 +1,4 @@
 ---
 roles:
-  - name: geerlingguy.pihole
+  - src: https://github.com/geerlingguy/ansible-role-pihole
+    name: geerlingguy.pihole
