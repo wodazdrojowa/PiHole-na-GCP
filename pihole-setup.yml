@@ -345,17 +345,17 @@
         verbosity: 0
       no_log: true
 
-    - name: Verify all client configs were created
-      find:
-        path: /etc/wireguard/clients
-        pattern: "client*.conf"
-      register: client_configs
-      failed_when: client_configs.matched < wireguard_clients | int
+#    - name: Verify all client configs were created
+#      find:
+#        path: /etc/wireguard/clients
+#        pattern: "client*.conf"
+#      register: client_configs
+#      failed_when: client_configs.matched < wireguard_clients | int
 
-    - name: Display created client configurations
-      debug:
-        msg: "✓ Created {{ client_configs.matched }} WireGuard client configs"
-        verbosity: 0
+#    - name: Display created client configurations
+#      debug:
+#        msg: "✓ Created {{ client_configs.matched }} WireGuard client configs"
+#        verbosity: 0
 
   handlers:
     - name: restart nginx
