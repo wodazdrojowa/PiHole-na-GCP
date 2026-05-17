@@ -83,9 +83,9 @@
       debug:
         var: apt_core_result
 
-    - name: Show installation errors (if any)
-      debug:
-        var: apt_optional_result
+#    - name: Show installation errors (if any)
+#      debug:
+#        var: apt_optional_result
 
     - name: Check if Pi-hole is already installed
       stat:
