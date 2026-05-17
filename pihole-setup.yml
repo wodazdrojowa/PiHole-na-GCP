@@ -140,7 +140,11 @@
       become: true
 
       vars:
-      # Tutaj wpisujesz to, co miałeś w setupVars.conf
+      pihole_server_ip: "{{ lookup('env', 'PIHOLE_IP') }}" # Bezpieczne pobieranie IP ze zmiennych Spacelift
+      pihole_webpassword: "{{ lookup('env', 'PIHOLE_PASSWORD') }}"
+      # Dobra praktyka: Hasła (pihole_webpassword) oraz wrażliwe adresy IP
+      # najlepiej przekazywać jako Zmienne Środowiskowe (Environment Variables) w Spacelift oznaczony jako
+      # Secret, a w kodzie Ansible odbierać je za pomocą lookup('env', 'NAZWA_ZMIENNEJ').
       PIHOLE_INTERFACE: {{ pihole_interface }}
       IPV4_ADDRESS: $(ip -4 addr show {{ pihole_interface }} | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
       IPV6_ADDRESS:

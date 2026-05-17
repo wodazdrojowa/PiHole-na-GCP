@@ -1,0 +1,8 @@
+stack:
+  ansible:
+    playbook: pihole-setup.yml  # nazwa Twojego głównego playbooka
+  steps:
+    before_plan:
+      - ansible-galaxy install -r requirements.yml
+    before_apply:
+      - ansible-galaxy install -r requirements.yml
