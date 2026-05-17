@@ -143,16 +143,16 @@
       # Tutaj wpisujesz to, co miałeś w setupVars.conf
       PIHOLE_INTERFACE: {{ pihole_interface }}
       IPV4_ADDRESS: $(ip -4 addr show {{ pihole_interface }} | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-      IPV6_ADDRESS=
-      PIHOLE_DNS_1=1.1.1.1
-      PIHOLE_DNS_2=8.8.8.8
-      QUERY_LOGGING=true
-      INSTALL_WEB_SERVER=true
-      INSTALL_WEB_INTERFACE=true
-      LIGHTTPD_ENABLED=true
-      WEBPASSWORD={{ pihole_password }}
-      BLOCKING_ENABLED=true
-      pihole_ipv4_address="192.168.1.100/24"
+      IPV6_ADDRESS:
+      PIHOLE_DNS_1: 1.1.1.1
+      PIHOLE_DNS_2: 8.8.8.8
+      QUERY_LOGGING: true
+      INSTALL_WEB_SERVER: true
+      INSTALL_WEB_INTERFACE: true
+      LIGHTTPD_ENABLED: true
+      WEBPASSWORD: {{ pihole_password }}
+      BLOCKING_ENABLED: true
+      pihole_ipv4_address: "192.168.1.100/24"
 
       roles:
         - geerlingguy.pihole
