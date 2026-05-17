@@ -50,6 +50,7 @@
         cache_valid_time: 3600
 
     - name: Install core required packages
+      become: true  # <--- Instalacja pakietów wymaga roota!
       apt:
         name:
           - curl
@@ -67,28 +68,24 @@
         state: present
         update_cache: yes
       register: apt_core_result
-      retries: 4
-      delay: 300
+      retries: 3
+      delay: 10
       until: apt_core_result is succeeded
-      timeout: 3600
-
+      
     - name: Update and upgrade apt packages
       become: true
       apt:
        update_cache: yes
        cache_valid_time: 3600
        upgrade: dist  # Optional: Adds the upgrade action if you want to update packages too
-       cache_valid_time: 86400 #One day
 
     - name: Show core packages installation result
       debug:
         var: apt_core_result
-        verbosity: 1
 
     - name: Show installation errors (if any)
       debug:
         var: apt_optional_result
-        verbosity: 1
 
     - name: Check if Pi-hole is already installed
       stat:
