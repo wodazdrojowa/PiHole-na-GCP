@@ -1,4 +1,6 @@
 ---
 roles:
-  - src: geerlingguy.pihole
+  - src: https://github.com/geerlingguy/ansible-role-pihole
+    scm: git
     version: 2.1.0
+    name: geerlingguy.pihole
