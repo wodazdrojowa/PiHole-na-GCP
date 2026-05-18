@@ -100,6 +100,7 @@ resource "google_os_login_ssh_public_key" "ansible" {
 # 4. Nadanie roli OS Login (używa zmiennej)
 resource "google_project_iam_member" "os_login_admin" {
   project = "github-test-terraform-v1"
+  project = var.project_id
   role    = "roles/compute.osAdminLogin"
   member  = "user:${var.os_login_user_email}"
 }

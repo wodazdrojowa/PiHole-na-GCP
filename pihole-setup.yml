@@ -27,7 +27,16 @@
     pihole_interface: "{{ lookup('env', 'PIHOLE_INTERFACE') | default('ens4', true) }}"
     wireguard_port: "{{ lookup('env', 'WIREGUARD_PORT') | default('51820', true) }}"
     wireguard_clients: "{{ lookup('env', 'WIREGUARD_CLIENTS') | default('5', true) | int }}"
-    pihole_installer_url: "https://install.pi-hole.net"
+    
+    # Konfiguracja roli geerlingguy.pihole
+    pihole_webpassword: "{{ pihole_password }}"
+    pihole_interface_name: "{{ pihole_interface }}"
+    pihole_dns_1: "1.1.1.1"
+    pihole_dns_2: "8.8.8.8"
+    pihole_installation_state: present
+
+  roles:
+    - geerlingguy.pihole
 
   tasks:
     - name: Wait for connection (OS Login propagation)
@@ -36,14 +45,6 @@
         timeout: 120
 
     - name: Show Ubuntu release info
-      shell: lsb_release -a || cat /etc/os-release
-      changed_when: false
-      register: ubuntu_info
-
-    - name: Show Ubuntu release
-      debug:
-        msg: "{{ ubuntu_info.stdout }}"
-
     - name: Update apt cache
       apt:
         update_cache: yes
