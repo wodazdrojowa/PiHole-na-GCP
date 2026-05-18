@@ -1,4 +1,4 @@
 ---
 roles:
-  - src: https://github.com/geerlingguy/ansible-role-pihole/archive/refs/tags/2.1.0.tar.gz
+  - src: https://github.com/geerlingguy/ansible-role-pihole/archive/refs/heads/master.tar.gz
     name: geerlingguy.pihole
