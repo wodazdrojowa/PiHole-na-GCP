@@ -35,9 +35,6 @@
     pihole_dns_2: "8.8.8.8"
     pihole_installation_state: present
 
-  roles:
-    - geerlingguy.pihole
-
   tasks:
     - name: Wait for connection (OS Login propagation)
       wait_for_connection:
