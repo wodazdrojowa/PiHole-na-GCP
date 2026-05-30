@@ -1,3 +1,0 @@
-roles:
-  - name: geerlingguy.pihole
-    src: https://github.com/geerlingguy/ansible-role-pihole/archive/refs/tags/6.1.0.tar.gz

@@ -4,7 +4,7 @@
   become: yes
   vars:
     pihole_password: "{{ lookup('env', 'PIHOLE_PASSWORD') | default('ChangeMe123!', true) }}"
-    domain_name: "pihole.example.com"  # Zmień na swoją domenę
+    domain_name: "pihole.owmor.de"  # Zmień na swoją domenę
     email: "admin@example.com"  # Zmień na swój email
     wireguard_port: 51820
     wireguard_clients: 5
