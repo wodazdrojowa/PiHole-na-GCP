@@ -146,7 +146,7 @@
       # Dobra praktyka: Hasła (pihole_webpassword) oraz wrażliwe adresy IP
       # najlepiej przekazywać jako Zmienne Środowiskowe (Environment Variables) w Spacelift oznaczony jako
       # Secret, a w kodzie Ansible odbierać je za pomocą lookup('env', 'NAZWA_ZMIENNEJ').
-      PIHOLE_INTERFACE: {{ pihole_interface }}
+      PIHOLE_INTERFACE: "{{ pihole_interface }}"
       IPV4_ADDRESS: $(ip -4 addr show {{ pihole_interface }} | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
       IPV6_ADDRESS:
       PIHOLE_DNS_1: 1.1.1.1
