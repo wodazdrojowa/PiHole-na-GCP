@@ -376,7 +376,6 @@
         name: lighttpd
         state: restarted
 
----
 - name: Pi-hole installation verification
   hosts: pihole
   become: true
