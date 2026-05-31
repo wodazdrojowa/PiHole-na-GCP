@@ -393,7 +393,7 @@
   tasks:
 
     - name: Ensure pingable
-      ping: google.com
+      ansible.builtin.command: ping -c 1 google.com
 
     - name: Check pihole-FTL service status
       shell: systemctl is-active pihole-FTL
