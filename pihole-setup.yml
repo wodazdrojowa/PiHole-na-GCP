@@ -375,3 +375,131 @@
       systemd:
         name: lighttpd
         state: restarted
+
+---
+- name: Pi-hole installation verification
+  hosts: pihole
+  become: true
+  gather_facts: false
+
+  vars:
+    pihole_ip: "{{ ansible_host | default(lookup('env','PIHOLE_IP') | default('127.0.0.1')) }}"
+    test_domains:
+      - google.com
+      - example.com
+      - badads.test
+    http_port: 80
+    dns_ports: [53]
+    check_ipv6: false
+
+  tasks:
+
+    - name: Ensure pingable
+      ping:
+
+    - name: Check pihole-FTL service status
+      shell: systemctl is-active pihole-FTL
+      register: ftl_status
+      changed_when: false
+
+    - name: Read last 200 lines of pihole-FTL journal
+      shell: journalctl -u pihole-FTL --no-pager | tail -n 200
+      register: ftl_journal
+      changed_when: false
+
+    - name: Test local DNS (127.0.0.1) for primary domain
+      shell: dig @127.0.0.1 +short {{ test_domains[0] }}
+      register: dig_local
+      changed_when: false
+
+    - name: Test DNS using Pi-hole IP for second domain
+      shell: dig @{{ pihole_ip }} +short {{ test_domains[1] }}
+      register: dig_remote
+      changed_when: false
+
+    - name: Test blocking domain (third domain)
+      shell: dig @{{ pihole_ip }} +short {{ test_domains[2] }}
+      register: dig_block_test
+      changed_when: false
+
+    - name: Check web admin reachable
+      uri:
+        url: "http://{{ pihole_ip }}:{{ http_port }}/admin"
+        method: GET
+        return_content: false
+        status_code: 200
+      register: web_admin
+      ignore_errors: true
+
+    - name: Check listening ports (53, 80)
+      shell: ss -tulpn | egrep -w '(:53|:80)'
+      register: ss_ports
+      changed_when: false
+
+    - name: Check DNS port binding for 53 UDP/TCP
+      shell: ss -u -n -l -p | egrep ':53\b' || true
+      register: ss_udp_53
+      changed_when: false
+
+    - name: Check DNS port binding for 53 TCP
+      shell: ss -t -n -l -p | egrep ':53\b' || true
+      register: ss_tcp_53
+      changed_when: false
+
+    - name: Check webserver process for admin (lighttpd/nginx/apache)
+      shell: ps aux | egrep -i 'lighttpd|nginx|apache2' | egrep -v 'egrep' || true
+      register: web_process
+      changed_when: false
+
+    - name: Run pihole -v (version)
+      shell: pihole -v
+      register: pihole_version
+      changed_when: false
+      ignore_errors: true
+
+    - name: Run pihole status (if available)
+      shell: pihole status
+      register: pihole_status
+      changed_when: false
+      ignore_errors: true
+
+    - name: Check for IPv6 tests if enabled
+      when: check_ipv6 | bool
+      block:
+        - name: Test IPv6 local DNS (::1) for primary domain
+          shell: dig AAAA @::1 +short {{ test_domains[0] }}
+          register: dig_ipv6_local
+          changed_when: false
+
+        - name: Test IPv6 DNS using Pi-hole IPv6 for second domain
+          shell: dig AAAA @{{ pihole_ip }} +short {{ test_domains[1] }}
+          register: dig_ipv6_remote
+          changed_when: false
+
+    - name: Update gravity lists (dry-run ping to pihole -g)
+      shell: pihole -g --nolog
+      register: pihole_g
+      changed_when: false
+      ignore_errors: true
+
+    - name: Collect results
+      set_fact:
+        pihole_check_results:
+          ftl_status: "{{ ftl_status.stdout | default('unknown') }}"
+          ftl_journal_tail: "{{ ftl_journal.stdout | default('') }}"
+          dig_local: "{{ dig_local.stdout_lines | default([]) }}"
+          dig_remote: "{{ dig_remote.stdout_lines | default([]) }}"
+          dig_block_test: "{{ dig_block_test.stdout_lines | default([]) }}"
+          web_admin_status: "{{ web_admin.status | default('unreachable') }}"
+          ss_ports: "{{ ss_ports.stdout | default('') }}"
+          ss_udp_53: "{{ ss_udp_53.stdout | default('') }}"
+          ss_tcp_53: "{{ ss_tcp_53.stdout | default('') }}"
+          web_process: "{{ web_process.stdout | default('') }}"
+          pihole_version: "{{ pihole_version.stdout | default('') }}"
+          pihole_status: "{{ pihole_status.stdout | default('') }}"
+          pihole_g: "{{ pihole_g.stdout | default('') }}"
+          check_ipv6: "{{ check_ipv6 | bool }}"
+
+    - name: Display summary
+      debug:
+        var: pihole_check_results
