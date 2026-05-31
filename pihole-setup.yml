@@ -62,7 +62,6 @@
           - qrencode
           - iptables-persistent
           - wireguard
-          - mc
         state: present
         update_cache: yes
       register: apt_core_result
