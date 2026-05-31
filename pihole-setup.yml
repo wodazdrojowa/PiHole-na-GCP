@@ -80,20 +80,10 @@
       debug:
         var: apt_core_result
 
-    - name: Show installation errors (if any)
-      debug:
-        var: apt_optional_result
-
     - name: Check if Pi-hole is already installed
       stat:
         path: /usr/local/bin/pihole
       register: pihole_installed
-
-    - name: Install mc if apt install failed (fallback)
-      shell: apt-get install -y mc || true
-      changed_when: false
-      failed_when: false
-      register: mc_install_fallback
 
     - name: Download Pi-hole installer via curl
       shell: "curl -L {{ pihole_installer_url }} -o /tmp/basic-install.sh"
@@ -131,26 +121,27 @@
 #      failed_when: pihole_install.rc not in [0, 1]
 #      register: pihole_install
     - name: Instalacja Pi-hole za pomocą gotowej roli
-      hosts: pihole_servers
+      #hosts: pihole_servers - claude pisze ze to niedozwolone w ramach tej samej playbooka, ale to jest już w ramach tego samego playbooka, więc powinno być ok
       become: true
       vars:
-      pihole_server_ip: "{{ lookup('env', 'PIHOLE_IP') }}" # Bezpieczne pobieranie IP ze zmiennych Spacelift
-      pihole_webpassword: "{{ lookup('env', 'PIHOLE_PASSWORD') }}"
-      # Dobra praktyka: Hasła (pihole_webpassword) oraz wrażliwe adresy IP
-      # najlepiej przekazywać jako Zmienne Środowiskowe (Environment Variables) w Spacelift oznaczony jako
-      # Secret, a w kodzie Ansible odbierać je za pomocą lookup('env', 'NAZWA_ZMIENNEJ').
-      PIHOLE_INTERFACE: "{{ pihole_interface }}"
-      IPV4_ADDRESS: $(ip -4 addr show {{ pihole_interface }} | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-      IPV6_ADDRESS:
-      PIHOLE_DNS_1: 1.1.1.1
-      PIHOLE_DNS_2: 8.8.8.8
-      QUERY_LOGGING: true
-      INSTALL_WEB_SERVER: true
-      INSTALL_WEB_INTERFACE: true
-      LIGHTTPD_ENABLED: true
-      WEBPASSWORD: "{{ pihole_password }}"
-      BLOCKING_ENABLED: true
-      pihole_ipv4_address: "192.168.1.100/24"
+        pihole_server_ip: "{{ lookup('env', 'PIHOLE_IP') }}" # Bezpieczne pobieranie IP ze zmiennych Spacelift
+        pihole_webpassword: "{{ lookup('env', 'PIHOLE_PASSWORD') }}"
+        # Dobra praktyka: Hasła (pihole_webpassword) oraz wrażliwe adresy IP
+        # najlepiej przekazywać jako Zmienne Środowiskowe (Environment Variables) w Spacelift oznaczony jako
+        # Secret, a w kodzie Ansible odbierać je za pomocą lookup('env', 'NAZWA_ZMIENNEJ').
+        PIHOLE_INTERFACE: "{{ pihole_interface }}"
+        IPV4_ADDRESS: "{{ lookup('env', 'INSTANCE_IP') }}"
+#        IPV4_ADDRESS: $(ip -4 addr show {{ pihole_interface }} | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+        IPV6_ADDRESS:
+        PIHOLE_DNS_1: 1.1.1.1
+        PIHOLE_DNS_2: 8.8.8.8
+        QUERY_LOGGING: true
+        INSTALL_WEB_SERVER: true
+        INSTALL_WEB_INTERFACE: true
+        LIGHTTPD_ENABLED: true
+        WEBPASSWORD: "{{ pihole_password }}"
+        BLOCKING_ENABLED: true
+        pihole_ipv4_address: "192.168.1.100/24"
 
 #    - name: Stop lighttpd to free port 80
 #      systemd:
@@ -359,7 +350,6 @@
           - "WireGuard Client configs: /etc/wireguard/clients/"
           - "WireGuard Status: {{ 'RUNNING' if wg_status.rc == 0 else 'CHECK LOGS' }}"
         verbosity: 0
-      no_log: true
 
 #    - name: Verify all client configs were created
 #      find:
