@@ -27,6 +27,7 @@
     pihole_interface: "{{ lookup('env', 'PIHOLE_INTERFACE') | default('ens4', true) }}"
     wireguard_port: "{{ lookup('env', 'WIREGUARD_PORT') | default('51820', true) }}"
     wireguard_clients: "{{ lookup('env', 'WIREGUARD_CLIENTS') | default('5', true) | int }}"
+    pihole_installer_url: "https://install.pi-hole.net"
     
     # Konfiguracja roli geerlingguy.pihole
     pihole_webpassword: "{{ pihole_password }}"
