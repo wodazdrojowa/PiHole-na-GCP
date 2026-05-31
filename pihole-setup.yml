@@ -80,9 +80,9 @@
       debug:
         var: apt_core_result
 
-#    - name: Show installation errors (if any)
-#      debug:
-#        var: apt_optional_result
+    - name: Show installation errors (if any)
+      debug:
+        var: apt_optional_result
 
     - name: Check if Pi-hole is already installed
       stat:
@@ -94,7 +94,6 @@
       changed_when: false
       failed_when: false
       register: mc_install_fallback
-
 
     - name: Download Pi-hole installer via curl
       shell: "curl -L {{ pihole_installer_url }} -o /tmp/basic-install.sh"
@@ -131,11 +130,9 @@
 #      when: not pihole_installed.stat.exists
 #      failed_when: pihole_install.rc not in [0, 1]
 #      register: pihole_install
-
     - name: Instalacja Pi-hole za pomocą gotowej roli
       hosts: pihole_servers
       become: true
-
       vars:
       pihole_server_ip: "{{ lookup('env', 'PIHOLE_IP') }}" # Bezpieczne pobieranie IP ze zmiennych Spacelift
       pihole_webpassword: "{{ lookup('env', 'PIHOLE_PASSWORD') }}"
