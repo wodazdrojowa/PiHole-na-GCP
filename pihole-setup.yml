@@ -41,7 +41,6 @@
         delay: 10
         timeout: 120
 
-    - name: Show Ubuntu release info
     - name: Update apt cache
       apt:
         update_cache: yes
