@@ -376,7 +376,7 @@
         state: restarted
 
 - name: Pi-hole installation verification
-  hosts: pihole
+  hosts: pihole_servers
   become: true
   gather_facts: false
 
