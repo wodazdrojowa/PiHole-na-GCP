@@ -398,7 +398,12 @@
     - name: Check pihole-FTL service status
       shell: systemctl is-active pihole-FTL
       register: ftl_status
+      ignore_errors: true
       changed_when: false
+
+    - name: Pokaz wynik z konsoli
+      ansible.builtin.debug:
+        var: ftl_status
 
     - name: Read last 200 lines of pihole-FTL journal
       shell: journalctl -u pihole-FTL --no-pager | tail -n 200
