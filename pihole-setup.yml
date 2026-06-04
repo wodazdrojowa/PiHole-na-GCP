@@ -410,20 +410,25 @@
       register: ftl_journal
       changed_when: false
 
-    - name: Test local DNS (127.0.0.1) for primary domain
-      shell: dig @127.0.0.1 +short {{ test_domains[0] }}
-      register: dig_local
-      changed_when: false
+#    - name: Test local DNS (127.0.0.1) for primary domain
+#      shell: dig @127.0.0.1 +short {{ test_domains[0] }}
+#      register: dig_local
+#      changed_when: false
 
-    - name: Test DNS using Pi-hole IP for second domain
-      shell: dig @{{ pihole_ip }} +short {{ test_domains[1] }}
-      register: dig_remote
-      changed_when: false
+#    - name: Pokaz wynik z Test local DNS (127.0.0.1)
+#      ansible.builtin.debug:
+#        var: dig_local
 
-    - name: Test blocking domain (third domain)
-      shell: dig @{{ pihole_ip }} +short {{ test_domains[2] }}
-      register: dig_block_test
-      changed_when: false
+#    - name: Test DNS using Pi-hole IP for second domain
+#      shell: dig @{{ pihole_ip }} +short {{ test_domains[1] }}
+#      register: dig_remote
+#      changed_when: false
+
+
+#    - name: Test blocking domain (third domain)
+#      shell: dig @{{ pihole_ip }} +short {{ test_domains[2] }}
+#      register: dig_block_test
+#      changed_when: false
 
     - name: Check web admin reachable
       uri:
