@@ -101,8 +101,6 @@
         mode: '0755'
         force: yes  # Wymusi pobranie, jeśli plik po stronie URL się zmienił
 
-
-
 #    - name: Create Pi-hole setup vars file
 #      copy:
 #        content: |
