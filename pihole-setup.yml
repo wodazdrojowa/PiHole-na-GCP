@@ -62,6 +62,7 @@
           - qrencode
           - iptables-persistent
           - wireguard
+          - mc
         state: present
         update_cache: yes
       register: apt_core_result
@@ -86,11 +87,21 @@
       register: pihole_installed
 
     - name: Download Pi-hole installer via curl
-      shell: "curl -L {{ pihole_installer_url }} -o /tmp/basic-install.sh"
-      args:
-        creates: /tmp/basic-install.sh
-      register: download_result
-      when: not pihole_installed.stat.exists
+# poporzednia konfiguracja
+#      shell: "curl -L {{ pihole_installer_url }} -o /tmp/basic-install.sh"
+#      args:
+#        creates: /tmp/basic-install.sh
+#      register: download_result
+#      when: not pihole_installed.stat.exists
+####################
+# nowa konfiguracja 
+      ansible.builtin.get_url:
+        url: https://install.pi-hole.net
+        dest: /tmp/basic-install.sh
+        mode: '0755'
+        force: yes  # Wymusi pobranie, jeśli plik po stronie URL się zmienił
+
+
 
 #    - name: Create Pi-hole setup vars file
 #      copy:
