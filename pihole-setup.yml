@@ -87,19 +87,11 @@
       register: pihole_installed
 
     - name: Download Pi-hole installer via curl
-# poporzednia konfiguracja
-#      shell: "curl -L {{ pihole_installer_url }} -o /tmp/basic-install.sh"
-#      args:
-#        creates: /tmp/basic-install.sh
-#      register: download_result
-#      when: not pihole_installed.stat.exists
-####################
-# nowa konfiguracja 
-      ansible.builtin.get_url:
-        url: https://install.pi-hole.net
-        dest: /tmp/basic-install.sh
-        mode: '0755'
-        force: yes  # Wymusi pobranie, jeśli plik po stronie URL się zmienił
+      shell: "curl -L {{ pihole_installer_url }} -o /tmp/basic-install.sh"
+      args:
+        creates: /tmp/basic-install.sh
+      register: download_result
+      when: not pihole_installed.stat.exists
 
 #    - name: Create Pi-hole setup vars file
 #      copy:
