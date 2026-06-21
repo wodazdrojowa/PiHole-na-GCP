@@ -111,16 +111,16 @@
       when: not pihole_installed.stat.exists
       no_log: false
 
-#    - name: Install Pi-hole
-#      shell: |
-#        mkdir -p /etc/pihole
-#        cp /tmp/setupVars.conf /etc/pihole/setupVars.conf
-#        bash /tmp/pihole-install.sh --unattended
-#      args:
-#        creates: /usr/local/bin/pihole
-#      when: not pihole_installed.stat.exists
-#      failed_when: pihole_install.rc not in [0, 1]
-#      register: pihole_install
+    - name: Install Pi-hole
+      shell: |
+        mkdir -p /etc/pihole
+        cp /tmp/setupVars.conf /etc/pihole/setupVars.conf
+        bash /tmp/pihole-install.sh --unattended
+      args:
+        creates: /usr/local/bin/pihole
+      when: not pihole_installed.stat.exists
+      failed_when: pihole_install.rc not in [0, 1]
+      register: pihole_install
 
 #    - name: Instalacja Pi-hole za pomocą gotowej roli
       #hosts: pihole_servers - claude pisze ze to niedozwolone w ramach tej samej playbooka, ale to jest już w ramach tego samego playbooka, więc powinno być ok
