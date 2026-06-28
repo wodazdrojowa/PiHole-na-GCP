@@ -87,9 +87,9 @@
       register: pihole_installed
 
     - name: Download Pi-hole installer via curl
-      shell: "curl -L {{ pihole_installer_url }} -o /tmp/basic-install.sh"
+      shell: "curl -L {{ pihole_installer_url }} -o /tmp/pihole-install.sh"
       args:
-        creates: /tmp/basic-install.sh
+        creates: /tmp/pihole-install.sh
       register: download_result
       when: not pihole_installed.stat.exists
 
