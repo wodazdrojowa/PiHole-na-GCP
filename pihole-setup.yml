@@ -86,6 +86,12 @@
         path: /usr/local/bin/pihole
       register: pihole_installed
 
+    - name: Remove old Pi-hole installer if exists
+      file:
+        path: /tmp/pihole-install.sh
+        state: absent
+      when: installer_file.stat.exists
+
     - name: Download Pi-hole installer via curl
       shell: "curl -L {{ pihole_installer_url }} -o /tmp/pihole-install.sh"
       args:
