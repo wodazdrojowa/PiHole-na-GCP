@@ -3,10 +3,22 @@ variable "os_login_user_email" {
   type        = string
 }
 
+variable "domain_name" {
+  description = "Subdomain for Pi-hole"
+  type        = string
+  default     = "pihole.owmor.de"
+}
+
 variable "ssh_user" {
   description = "SSH username"
   type        = string
   default     = ""
+}
+
+variable "pihole_admin_password" {
+  description = "Pi-Hole admin password"
+  type        = string
+  default     = "ChangeMe123!"
 }
 
 variable "ssh_public_key_path" {
