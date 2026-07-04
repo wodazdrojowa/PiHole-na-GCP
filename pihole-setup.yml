@@ -267,19 +267,19 @@
       failed_when: wg_server_public_key.rc != 0
       no_log: true
 
-#    - name: Create WireGuard server configuration
-#      copy:
-#        content: |
-#          [Interface]
-#          Address = 10.8.0.1/24
-#          ListenPort = {{ wireguard_port }}
-#          PrivateKey = {{ wg_server_private_key.stdout }}
-#          PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o {{ pihole_interface }} -j MASQUERADE
-#          PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o {{ pihole_interface }} -j MASQUERADE
-#        dest: /etc/wireguard/wg0.conf
-#        mode: '0600'
-#      register: wg_config_created
-#      no_log: true
+    - name: Create WireGuard server configuration
+      copy:
+        content: |
+          [Interface]
+          Address = 10.8.0.1/24
+          ListenPort = {{ wireguard_port }}
+          PrivateKey = {{ wg_server_private_key.stdout }}
+          PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o {{ pihole_interface }} -j MASQUERADE
+          PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o {{ pihole_interface }} -j MASQUERADE
+        dest: /etc/wireguard/wg0.conf
+        mode: '0600'
+      register: wg_config_created
+      no_log: true
 
     - name: Generate WireGuard client configurations
       include_tasks: wireguard_client.yml
@@ -360,17 +360,17 @@
           - "WireGuard Status: {{ 'RUNNING' if wg_status.rc == 0 else 'CHECK LOGS' }}"
         verbosity: 0
 
-#    - name: Verify all client configs were created
-#      find:
-#        path: /etc/wireguard/clients
-#        pattern: "client*.conf"
-#      register: client_configs
-#      failed_when: client_configs.matched < wireguard_clients | int
+    - name: Verify all client configs were created
+      find:
+        path: /etc/wireguard/clients
+        pattern: "client*.conf"
+      register: client_configs
+      failed_when: client_configs.matched < wireguard_clients | int
 
-#    - name: Display created client configurations
-#      debug:
-#        msg: "✓ Created {{ client_configs.matched }} WireGuard client configs"
-#        verbosity: 0
+    - name: Display created client configurations
+      debug:
+        msg: "✓ Created {{ client_configs.matched }} WireGuard client configs"
+        verbosity: 0
 
   handlers:
     - name: restart nginx
@@ -439,7 +439,7 @@
 
     - name: Check web admin reachable
       uri:
-        url: "http://{{ pihole_ip }}:{{ http_port }}/admin"
+        url: "http://{{ domain_name }}:{{ http_port }}/admin"
         method: GET
         return_content: false
         status_code: 200
