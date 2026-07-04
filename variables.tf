@@ -1,4 +1,4 @@
-variable "os_login_user_email" {
+variable "user_email" {
   description = "wodazdrojowa@gmail.com"
   type        = string
 }
