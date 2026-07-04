@@ -9,12 +9,6 @@ variable "domain_name" {
   default     = "pihole.owmor.de"
 }
 
-variable "ssh_user" {
-  description = "SSH username"
-  type        = string
-  default     = ""
-}
-
 variable "pihole_admin_password" {
   description = "Pi-Hole admin password"
   type        = string

@@ -125,14 +125,6 @@ resource "google_compute_instance" "pihole" {
     }
   }
 
-#metadata = {
-#    ssh-keys = "${var.ssh_user}:${tls_private_key.ssh_key.public_key_openssh}"
-#  }
-
-#  metadata = {
-#    ssh-keys = "${var.ssh_user}:${file(var.ssh_public_key_path)}"
-#  }
-
   metadata_startup_script = <<-EOF
     #!/bin/bash
     apt-get update

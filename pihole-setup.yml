@@ -21,14 +21,11 @@
   become: true
   gather_facts: true
   vars:
-    pihole_password: "pihole_admin_password"
-#    pihole_password: "{{ lookup('env', 'PIHOLE_PASSWORD') | default('ChangeMe123!', true) }}"
-    domain_name: "domain_name"
-#    domain_name: "{{ lookup('env', 'DOMAIN_NAME') | default('pihole.example.com', true) }}"
-    email: "os_login_user_email"
-#    email: "{{ lookup('env', 'ADMIN_EMAIL') | default('admin@example.com', true) }}"
-    pihole_interface: "{{ lookup('env', 'PIHOLE_INTERFACE') | default('ens4', true) }}"
-    wireguard_port: "{{ lookup('env', 'WIREGUARD_PORT') | default('51820', true) }}"
+    pihole_password: "{{ lookup('env', 'pihole_password') }}"
+    domain_name: "{{ lookup('env', 'domain_name') | default('pihole.example.com', true) }}"
+    email: "{{ lookup('env', 'os_login_user_email') | default('admin@example.com', true) }}"
+    pihole_interface: "{{ lookup('env', 'pihole_interface') | default('ens4', true) }}"
+    wireguard_port: "{{ lookup('env', 'wireguard_port') | default('51820', true) }}"
     wireguard_clients: "{{ lookup('env', 'WIREGUARD_CLIENTS') | default('5', true) | int }}"
     pihole_installer_url: "https://install.pi-hole.net"
     
@@ -89,11 +86,12 @@
         path: /usr/local/bin/pihole
       register: pihole_installed
 
-    - name: Remove old Pi-hole installer if exists
-      file:
-        path: /tmp/pihole-install.sh
-        state: absent
-      when: installer_file.stat.exists
+#    - name: Remove old Pi-hole installer if exists
+#      file:
+#        path: /tmp/pihole-install.sh
+#        state: absent
+#      when: installer_file.stat.exists
+# Task "Remove old Pi-hole installer if exists" (linia 92-96) odwołuje się do installer_file.stat.exists, ale nigdzie nie ma zarejestrowanej zmiennej installer_file (jest tylko pihole_installed) — to zadanie się wywali albo nigdy się nie wykona poprawnie.
 
     - name: Download Pi-hole installer via curl
       shell: "curl -L {{ pihole_installer_url }} -o /tmp/pihole-install.sh"
@@ -347,11 +345,11 @@
       ufw:
         state: enabled
 
-    - name: Verify WireGuard is running
-      command: wg show wg0
-      register: wg_status
-      changed_when: false
-      failed_when: false
+#    - name: Verify WireGuard is running
+#      command: wg show wg0
+#      register: wg_status
+#      changed_when: false
+#      failed_when: false
 
     - name: Display WireGuard status
       debug:
