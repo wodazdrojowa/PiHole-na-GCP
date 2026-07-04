@@ -152,13 +152,13 @@
 #        BLOCKING_ENABLED: true
 #        pihole_ipv4_address: "192.168.1.100/24"
 
-#    - name: Stop lighttpd to free port 80
-#      systemd:
-#        name: lighttpd
-#        state: stopped
-#        enabled: no
-#      ignore_errors: yes
-#      register: lighttpd_stop
+    - name: Stop lighttpd to free port 80
+      systemd:
+        name: lighttpd
+        state: stopped
+        enabled: no
+      ignore_errors: yes
+      register: lighttpd_stop
 
     - name: Configure Nginx for Pi-hole
       copy:
