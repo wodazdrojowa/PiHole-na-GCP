@@ -351,14 +351,14 @@
 #      changed_when: false
 #      failed_when: false
 
-    - name: Display WireGuard status
-      debug:
-        msg:
-          - "✓ Pi-hole installation complete!"
-          - "Web Interface: https://{{ domain_name }}/admin"
-          - "WireGuard Client configs: /etc/wireguard/clients/"
-          - "WireGuard Status: {{ 'RUNNING' if wg_status.rc == 0 else 'CHECK LOGS' }}"
-        verbosity: 0
+#    - name: Display WireGuard status
+#      debug:
+#        msg:
+#          - "✓ Pi-hole installation complete!"
+#          - "Web Interface: https://{{ domain_name }}/admin"
+#          - "WireGuard Client configs: /etc/wireguard/clients/"
+#          - "WireGuard Status: {{ 'RUNNING' if wg_status.rc == 0 else 'CHECK LOGS' }}"
+#        verbosity: 0
 
     - name: Verify all client configs were created
       find:
