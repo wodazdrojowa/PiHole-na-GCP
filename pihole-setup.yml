@@ -23,7 +23,7 @@
   vars:
     pihole_password: "{{ lookup('env', 'pihole_password') }}"
     domain_name: "{{ lookup('env', 'domain_name') | default('pihole.example.com', true) }}"
-    email: "{{ lookup('env', 'user_email') | default('admin@example.com', true) }}"
+    email: "{{ lookup('env', 'USER_EMAIL') | default('admin@example.com', true) }}"
     pihole_interface: "{{ lookup('env', 'pihole_interface') | default('ens4', true) }}"
     wireguard_port: "{{ lookup('env', 'wireguard_port') | default('51820', true) }}"
     wireguard_clients: "{{ lookup('env', 'WIREGUARD_CLIENTS') | default('5', true) | int }}"
