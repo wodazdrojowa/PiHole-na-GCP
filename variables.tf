@@ -1,6 +1,7 @@
 variable "user_email" {
-  description = "wodazdrojowa@gmail.com"
+  description = "User email"
   type        = string
+  default     = "wodazdrojowa@gmail.com"
 }
 
 variable "domain_name" {
