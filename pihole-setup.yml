@@ -81,7 +81,7 @@
       debug:
         var: apt_core_result
 
-   - name: Check if Pi-hole is already installed
+    - name: Check if Pi-hole is already installed
       stat:
         path: /usr/local/bin/pihole
       register: pihole_installed
