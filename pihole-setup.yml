@@ -240,7 +240,7 @@
         certbot certonly --nginx
         --non-interactive
         --agree-tos
-        --email {{ user_email }}
+        --email {{ lookup('env', 'USER_EMAIL') | default('', true) }}"
         -d {{ domain_name }}
       args:
         creates: /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem
