@@ -4,6 +4,12 @@ variable "user_email" {
   default     = "wodazdrojowa@gmail.com"
 }
 
+variable "os_login_user_email" {
+  description = "User from OS Login, like: sa_84949439"
+  type        = string
+  default     = ""
+}
+
 variable "domain_name" {
   description = "Subdomain for Pi-hole"
   type        = string
