@@ -5,8 +5,6 @@
 # przebiegu potrzebuje when: not ansible_check_mode
 
 
-
-
 # ============================================================
 # Play 1: Dynamically add host to inventory based on
 # environment variables from Terraform/Spacelift
@@ -43,7 +41,7 @@
     wireguard_port: "{{ lookup('env', 'WIREGUARD_PORT') | default('51820', true) }}"
     wireguard_clients: "{{ lookup('env', 'WIREGUARD_CLIENTS') | default('2', true) | int }}"
     pihole_installer_url: "https://install.pi-hole.net"
-    
+
     # Konfiguracja roli geerlingguy.pihole
     pihole_webpassword: "{{ pihole_password }}"
     pihole_interface_name: "{{ pihole_interface }}"
@@ -84,7 +82,7 @@
       retries: 3
       delay: 10
       until: apt_core_result is succeeded
-      
+
     - name: Update and upgrade apt packages
       become: true
       apt:
@@ -100,7 +98,7 @@
       stat:
         path: /usr/local/bin/pihole
       register: pihole_installed
- 
+
     - name: Remove old Pi-hole installer if exists
       file:
         path: /tmp/pihole-install.sh
@@ -143,30 +141,13 @@
       when: not pihole_installed.stat.exists
       failed_when: pihole_install.rc not in [0, 1]
       register: pihole_install
-#    - name: Instalacja Pi-hole za pomocą gotowej roli
-      #hosts: pihole_servers - claude pisze ze to niedozwolone w ramach tej samej playbooka, ale to jest już w ramach tego samego playbooka, więc powinno być ok
-#      become: true
-#      vars:
-#        pihole_server_ip: "{{ lookup('env', 'PIHOLE_IP') }}" # Bezpieczne pobieranie IP ze zmiennych Spacelift
-#        pihole_webpassword: "{{ lookup('env', 'PIHOLE_PASSWORD') }}"
-####        # Dobra praktyka: Hasła (pihole_webpassword) oraz wrażliwe adresy IP
-####        # najlepiej przekazywać jako Zmienne Środowiskowe (Environment Variables) w Spacelift oznaczony jako
-####        # Secret, a w kodzie Ansible odbierać je za pomocą lookup('env', 'NAZWA_ZMIENNEJ').
-#        PIHOLE_INTERFACE: "{{ pihole_interface }}"
-#        IPV4_ADDRESS: "{{ lookup('env', 'INSTANCE_IP') }}"
-#        IPV4_ADDRESS: $(ip -4 addr show {{ pihole_interface }} | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-#        IPV6_ADDRESS:
-#        PIHOLE_DNS_1: 1.1.1.1
-#        PIHOLE_DNS_2: 8.8.8.8
-#        QUERY_LOGGING: true
-#        INSTALL_WEB_SERVER: true
-#        INSTALL_WEB_INTERFACE: true
-#        LIGHTTPD_ENABLED: true
-#        WEBPASSWORD: "{{ pihole_password }}"
-#        BLOCKING_ENABLED: true
-#        pihole_ipv4_address: "192.168.1.100/24"
 
-#ponizse jest bez sensu - "zatrzymaj lighttpd, żeby zwolnić port 80" zakłada, że lighttpd może tam być (np. domyślnie zainstalowany z jakimś innym pakietem, jak php-lighttpd, albo pozostałość po starszej wersji Pi-hole, która domyślnie używała lighttpd zamiast nginx). Jeśli wiesz na pewno, że Twój obraz bazowy nigdy nie ma lighttpd, ten task jest właściwie zbędny — ale zostawienie go z ignore_errors: yes jako zabezpieczenie "na wszelki wypadek" też ma sens, więc nie musisz go usuwać.
+    # Ponizej jest bez sensu - "zatrzymaj lighttpd, żeby zwolnić port 80" zakłada, że lighttpd
+    # może tam być (np. domyślnie zainstalowany z jakimś innym pakietem, jak php-lighttpd, albo
+    # pozostałość po starszej wersji Pi-hole, która domyślnie używała lighttpd zamiast nginx).
+    # Jeśli wiesz na pewno, że Twój obraz bazowy nigdy nie ma lighttpd, ten task jest właściwie
+    # zbędny — ale zostawienie go z ignore_errors: yes jako zabezpieczenie "na wszelki wypadek"
+    # też ma sens, więc nie musisz go usuwać.
     - name: Stop lighttpd to free port 80
       systemd:
         name: lighttpd
@@ -174,22 +155,6 @@
       ignore_errors: yes
       when: not ansible_check_mode # bez ukrywania prawdziwych błędów przy realnym apply - pomiń całe zadanie w trybie check, bo w planowaniu nie ma sensu je uruchamiać
       register: lighttpd_stop
-      
-    - name: Configure Nginx for Pi-hole
-      copy:
-        content: |
-          server {
-              listen 80;
-              server_name {{ domain_name }};
-
-              location /.well-known/acme-challenge/ {
-                  root /var/www/html;
-              }
-
-              location / {
-                  return 301 https://$server_name$request_uri;
-              }
-          }
 
     - name: Deploy temporary HTTP-only nginx config (for cert issuance)
       copy:
@@ -234,6 +199,7 @@
     - name: Deploy final nginx config with SSL
       copy:
         content: |
+          server {
               listen 443 ssl http2;
               server_name {{ domain_name }};
 
@@ -258,6 +224,18 @@
                   proxy_set_header X-Real-IP $remote_addr;
                   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                   proxy_set_header X-Forwarded-Proto $scheme;
+              }
+          }
+
+          server {
+              listen 80;
+              server_name {{ domain_name }};
+
+              location /.well-known/acme-challenge/ {
+                  root /var/www/html;
+              }
+              location / {
+                  return 301 https://$host$request_uri;
               }
           }
         dest: /etc/nginx/sites-available/pihole
@@ -292,18 +270,6 @@
 #        enabled: yes
       when: not ansible_check_mode and lighttpd_stop.changed #pomiń to zadanie w fazie chceck mode
 
-    - name: Obtain Let's Encrypt certificate
-      command: >
-        certbot certonly --nginx
-        --non-interactive
-        --agree-tos
-        --email {{ email }}
-        -d {{ domain_name }}
-      args:
-        creates: /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem
-      register: certbot_result
-      failed_when: certbot_result.rc not in [0, 1]
-
     - name: Enable IP forwarding
       sysctl:
         name: net.ipv4.ip_forward
@@ -315,7 +281,7 @@
       apt:
         name: wireguard
         state: present
-        update_cache: yes        
+        update_cache: yes
 
     - name: Check if WireGuard server config already exists
       stat:
@@ -356,7 +322,7 @@
         mode: '0600'
       when: not wg0_conf.stat.exists
       no_log: true
- 
+
     - name: Generate WireGuard client configurations
       include_tasks: wireguard_client.yml
       loop: "{{ range(1, wireguard_clients + 1) | list }}"
@@ -411,12 +377,13 @@
     - name: Enable UFW
       ufw:
         state: enabled
+
     - name: Check WireGuard status
       command: systemctl is-active wg-quick@wg0
       register: wg_status
       changed_when: false
       failed_when: false
-    
+
     - name: Display WireGuard status
       debug:
         msg:
