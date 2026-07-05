@@ -41,7 +41,7 @@
     email: "{{ lookup('env', 'ADMIN_EMAIL') | default('admin@example.com', true) }}"
     pihole_interface: "{{ lookup('env', 'PIHOLE_INTERFACE') | default('ens4', true) }}"
     wireguard_port: "{{ lookup('env', 'WIREGUARD_PORT') | default('51820', true) }}"
-    wireguard_clients: "{{ lookup('env', 'WIREGUARD_CLIENTS') | default('5', true) | int }}"
+    wireguard_clients: "{{ lookup('env', 'WIREGUARD_CLIENTS') | default('2', true) | int }}"
     pihole_installer_url: "https://install.pi-hole.net"
     
     # Konfiguracja roli geerlingguy.pihole
@@ -269,6 +269,12 @@
         state: present
         reload: yes
 
+    - name: Install WireGuard
+      apt:
+        name: wireguard
+        state: present
+        update_cache: yes        
+
     - name: Check if WireGuard server config already exists
       stat:
         path: /etc/wireguard/wg0.conf
@@ -314,11 +320,11 @@
     - name: Start and enable WireGuard
       systemd:
         name: wg-quick@wg0
-#        daemon_reload: yes
+        daemon_reload: yes
         state: started
-        ignore_errors: true
         enabled: yes
       when: not ansible_check_mode
+#      ignore_errors: true
 
     - name: Configure UFW defaults
       ufw:
