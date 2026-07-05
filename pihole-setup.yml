@@ -358,7 +358,12 @@
     - name: Enable UFW
       ufw:
         state: enabled
-
+    - name: Check WireGuard status
+      command: systemctl is-active wg-quick@wg0
+      register: wg_status
+      changed_when: false
+      failed_when: false
+    
     - name: Display WireGuard status
       debug:
         msg:
