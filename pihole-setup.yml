@@ -189,7 +189,7 @@
         -w /var/www/html
         --non-interactive
         --agree-tos
-        --email {{ email }}
+        --email {{ USER_EMAIL }}
         -d {{ domain_name }}
       args:
         creates: /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem
