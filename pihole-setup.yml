@@ -143,7 +143,6 @@
       when: not pihole_installed.stat.exists
       failed_when: pihole_install.rc not in [0, 1]
       register: pihole_install
-
 #    - name: Instalacja Pi-hole za pomocą gotowej roli
       #hosts: pihole_servers - claude pisze ze to niedozwolone w ramach tej samej playbooka, ale to jest już w ramach tego samego playbooka, więc powinno być ok
 #      become: true
@@ -167,6 +166,7 @@
 #        BLOCKING_ENABLED: true
 #        pihole_ipv4_address: "192.168.1.100/24"
 
+#ponizse jest bez sensu - "zatrzymaj lighttpd, żeby zwolnić port 80" zakłada, że lighttpd może tam być (np. domyślnie zainstalowany z jakimś innym pakietem, jak php-lighttpd, albo pozostałość po starszej wersji Pi-hole, która domyślnie używała lighttpd zamiast nginx). Jeśli wiesz na pewno, że Twój obraz bazowy nigdy nie ma lighttpd, ten task jest właściwie zbędny — ale zostawienie go z ignore_errors: yes jako zabezpieczenie "na wszelki wypadek" też ma sens, więc nie musisz go usuwać.
     - name: Stop lighttpd to free port 80
       systemd:
         name: lighttpd
