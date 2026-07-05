@@ -36,7 +36,7 @@
   vars:
     pihole_password: "{{ lookup('env', 'PIHOLE_PASSWORD') | default('ChangeMe123!', true) }}"
     domain_name: "{{ lookup('env', 'PIHOLE_IP') | default('pihole.example.com', true) }}"
-    email: "{{ lookup('env', 'USER_EMAIL') | default('admin@example.com', true) }}"
+    email: "{{ lookup('env', '') | default('admin@example.com', true) }}"
     pihole_interface: "{{ lookup('env', 'PIHOLE_INTERFACE') | default('ens4', true) }}"
     wireguard_port: "{{ lookup('env', 'WIREGUARD_PORT') | default('51820', true) }}"
     wireguard_clients: "{{ lookup('env', 'WIREGUARD_CLIENTS') | default('2', true) | int }}"
