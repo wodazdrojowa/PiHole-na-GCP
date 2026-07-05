@@ -395,7 +395,7 @@
         path: /etc/wireguard/clients
         pattern: "client*.conf"
       register: client_configs
-      failed_when
+      failed_when:
         - not ansible_check_mode
         - client_configs.matched < wireguard_clients | int
       when: not ansible_check_mode
