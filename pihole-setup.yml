@@ -1,4 +1,12 @@
 ---
+# Ogólna rada: przeszukaj cały pihole-setup.yml i pliki dołączane (wireguard_client.yml itd.)
+# pod kątem modułu systemd/service — to jedyny typ modułu, który w check mode realnie odpytuje
+# system (systemctl show), więc każde takie zadanie zależne od pakietu instalowanego w tym samym
+# przebiegu potrzebuje when: not ansible_check_mode
+
+
+
+
 # ============================================================
 # Play 1: Dynamically add host to inventory based on
 # environment variables from Terraform/Spacelift
@@ -163,10 +171,10 @@
       systemd:
         name: lighttpd
         state: stopped
-        enabled: no
-      ignore_errors: yes
+#      ignore_errors: yes
+      when: not ansible_check_mode # bez ukrywania prawdziwych błędów przy realnym apply - pomiń całe zadanie w trybie check, bo w planowaniu nie ma sensu je uruchamiać
       register: lighttpd_stop
-
+      
     - name: Configure Nginx for Pi-hole
       copy:
         content: |
@@ -237,10 +245,10 @@
     - name: Start and enable lighttpd
       systemd:
         name: lighttpd
-        daemon_reload: yes
+#        daemon_reload: yes
         state: started
-        enabled: yes
-      when: lighttpd_stop.changed
+#        enabled: yes
+      when: not ansible_check_mode and lighttpd_stop.changed #pomiń to zadanie w fazie chceck mode
 
     - name: Obtain Let's Encrypt certificate
       command: >
@@ -377,6 +385,7 @@
       systemd:
         name: nginx
         state: restarted
+      when: not ansible_check_mode
 
     - name: restart lighttpd
       systemd:
