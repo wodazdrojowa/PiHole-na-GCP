@@ -403,7 +403,7 @@
     - name: Display created client configurations
       debug:
         msg: "✓ Created {{ client_configs.matched }} WireGuard client configs"
-        verbosity: 0
+      when: not ansible_check_mode
 
   handlers:
     - name: restart nginx
