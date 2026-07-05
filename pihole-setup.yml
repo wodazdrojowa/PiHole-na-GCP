@@ -306,9 +306,11 @@
     - name: Start and enable WireGuard
       systemd:
         name: wg-quick@wg0
-        daemon_reload: yes
+#        daemon_reload: yes
         state: started
+        ignore_errors: true
         enabled: yes
+      when: not ansible_check_mode
 
     - name: Configure UFW defaults
       ufw:
