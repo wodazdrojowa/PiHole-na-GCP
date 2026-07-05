@@ -280,6 +280,11 @@
         path: /etc/wireguard/wg0.conf
       register: wg0_conf
 
+    - name: Check if WireGuard clients directory already exists
+      stat:
+        path: /etc/wireguard/clients
+      register: wg_clients_dir
+
     - name: Generate WireGuard server private key
       shell: wg genkey
       register: wg_server_private_key
@@ -315,8 +320,8 @@
       loop: "{{ range(1, wireguard_clients + 1) | list }}"
       loop_control:
         loop_var: client_number
-      when: not wg0_conf.stat.exists
- 
+      when: not wg_clients_dir.stat.exists
+
     - name: Start and enable WireGuard
       systemd:
         name: wg-quick@wg0
@@ -378,6 +383,12 @@
           - "WireGuard Client configs: /etc/wireguard/clients/"
           - "WireGuard Status: {{ 'RUNNING' if wg_status.rc == 0 else 'CHECK LOGS' }}"
         verbosity: 0
+
+    - name: Ensure WireGuard clients directory exists
+      file:
+        path: /etc/wireguard/clients
+        state: directory
+        mode: '0700'
 
     - name: Verify all client configs were created
       find:
