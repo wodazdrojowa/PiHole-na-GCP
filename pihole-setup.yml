@@ -35,7 +35,7 @@
   gather_facts: true
   vars:
     pihole_password: "{{ lookup('env', 'PIHOLE_PASSWORD') | default('ChangeMe123!', true) }}"
-    domain_name: "{{ lookup('env', 'PIHOLE_IP') | default('pihole.example.com', true) }}"
+    domain_name: "{{ lookup('env', 'PIHOLE_IP') | default('pihole.example.com1', true) }}"
     email: "{{ lookup('env', 'USER_EMAIL') | default('admin@example.com', true) }}"
     pihole_interface: "{{ lookup('env', 'PIHOLE_INTERFACE') | default('ens4', true) }}"
     wireguard_port: "{{ lookup('env', 'WIREGUARD_PORT') | default('51820', true) }}"
@@ -148,13 +148,13 @@
     # Jeśli wiesz na pewno, że Twój obraz bazowy nigdy nie ma lighttpd, ten task jest właściwie
     # zbędny — ale zostawienie go z ignore_errors: yes jako zabezpieczenie "na wszelki wypadek"
     # też ma sens, więc nie musisz go usuwać.
-    - name: Stop lighttpd to free port 80
-      systemd:
-        name: lighttpd
-        state: stopped
-      ignore_errors: yes
-      when: not ansible_check_mode # bez ukrywania prawdziwych błędów przy realnym apply - pomiń całe zadanie w trybie check, bo w planowaniu nie ma sensu je uruchamiać
-      register: lighttpd_stop
+#    - name: Stop lighttpd to free port 80
+#      systemd:
+#        name: lighttpd
+#        state: stopped
+#      ignore_errors: yes
+#      when: not ansible_check_mode # bez ukrywania prawdziwych błędów przy realnym apply - pomiń całe zadanie w trybie check, bo w planowaniu nie ma sensu je uruchamiać
+#      register: lighttpd_stop
 
     - name: Deploy temporary HTTP-only nginx config (for cert issuance)
       copy:
