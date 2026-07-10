@@ -260,7 +260,7 @@
         regexp: '^server.port\s*='
         line: 'server.port = 8080'
       notify: restart lighttpd
-      when: lighttpd_stop.changed
+  #    when: lighttpd_stop.changed
 
     - name: Start and enable lighttpd
       systemd:
