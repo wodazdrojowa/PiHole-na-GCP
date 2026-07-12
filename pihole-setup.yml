@@ -260,7 +260,7 @@
         regexp: '^server.port\s*='
         line: 'server.port = 8080'
       notify: restart lighttpd
-      when: lighttpd_stop.changed
+  #    when: lighttpd_stop.changed
 
     - name: Start and enable lighttpd
       systemd:
@@ -288,10 +288,10 @@
         path: /etc/wireguard/wg0.conf
       register: wg0_conf
 
-    - name: Check if WireGuard clients directory already exists
-      stat:
-        path: /etc/wireguard/clients
-      register: wg_clients_dir
+ #   - name: Check if WireGuard clients directory already exists
+#      stat:
+#        path: /etc/wireguard/clients
+#      register: wg_clients_dir
 
     - name: Generate WireGuard server private key
       shell: wg genkey
