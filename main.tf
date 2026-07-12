@@ -184,5 +184,5 @@ output "user_email" {
   value = "var.user_email"
 }
 output "domain_name" {
-  value = "var.domain_name"
+  value = var.domain_name
 }
