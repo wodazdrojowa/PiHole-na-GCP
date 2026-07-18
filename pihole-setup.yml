@@ -254,6 +254,11 @@
         state: absent
       notify: restart nginx
 
+    - name: Check if lighttpd config exists
+      stat:
+        path: /etc/lighttpd/lighttpd.conf
+      register: lighttpd_conf
+
     - name: Change lighttpd port to 8080
       lineinfile:
         path: /etc/lighttpd/lighttpd.conf
@@ -261,6 +266,15 @@
         line: 'server.port = 8080'
       notify: restart lighttpd
   #    when: lighttpd_stop.changed
+
+    - name: Start and enable lighttpd if installed
+      systemd:
+        name: lighttpd
+        state: started
+        enabled: yes
+      when: 
+        - not ansible_check_mode
+        - lighttpd_conf.stat.exists
 
     - name: Start and enable lighttpd
       systemd:
