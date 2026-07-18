@@ -254,10 +254,19 @@
         state: absent
       notify: restart nginx
 
+    - name: Check if lighttpd is installed
+      stat:
+        path: /usr/sbin/lighttpd
+      register: lighttpd_binary
+
     - name: Check if lighttpd config exists
       stat:
         path: /etc/lighttpd/lighttpd.conf
       register: lighttpd_conf
+
+    - name: Verify lighttpd was installed by Pi-hole
+      debug:
+        msg: "lighttpd installed: {{ lighttpd_binary.stat.exists }}, config exists: {{ lighttpd_conf.stat.exists }}"
 
     - name: Change lighttpd port to 8080
       lineinfile:
@@ -267,7 +276,7 @@
       notify: restart lighttpd
   #    when: lighttpd_stop.changed
 
-    - name: Start and enable lighttpd if installed
+    - name: Start and enable lighttpd
       systemd:
         name: lighttpd
         state: started
@@ -275,14 +284,6 @@
       when: 
         - not ansible_check_mode
         - lighttpd_conf.stat.exists
-
-    - name: Start and enable lighttpd
-      systemd:
-        name: lighttpd
-#        daemon_reload: yes
-        state: started
-#        enabled: yes
-      when: not ansible_check_mode and lighttpd_stop.changed #pomiń to zadanie w fazie chceck mode
 
     - name: Enable IP forwarding
       sysctl:
@@ -428,6 +429,16 @@
         msg: "✓ Created {{ client_configs.matched }} WireGuard client configs"
       when: not ansible_check_mode
 
+    - name: Check Pi-hole version
+      command: pihole -v
+      register: pihole_version_output
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Show Pi-hole version
+      debug:
+        var: pihole_version_output.stdout_lines
+
   handlers:
     - name: restart nginx
       systemd:
@@ -439,6 +450,7 @@
       systemd:
         name: lighttpd
         state: restarted
+      when: not ansible_check_mode
 
 # ============================================================
 # Play 3: Verify and summarise results
