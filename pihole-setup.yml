@@ -354,6 +354,11 @@
         mode: '0600'
       when: not wg0_conf.stat.exists
       no_log: true
+      
+    - name: Check if WireGuard clients directory exists
+      ansible.builtin.stat:
+        path: /etc/wireguard/clients  # adjust this path to match your setup
+      register: wg_clients_dir
 
     - name: Generate WireGuard client configurations
       include_tasks: wireguard_client.yml
