@@ -60,5 +60,4 @@ output "ssh_private_key" {
 output "domain_name" {
   value       = var.domain_name
   description = "Subdomain for Pi-hole"
-  type        = string
 }
