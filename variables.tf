@@ -11,10 +11,10 @@ variable "os_login_user_email" {
 }
 
 variable "domain_name" {
-  description = "Subdomain for Pi-hole"
-  type        = string
-  default     = ""
   value       = var.domain_name
+  description = "Subdomain for Pi-hole"
+  type        = string.
+  default     = ""
 }
 
 variable "pihole_admin_password" {
