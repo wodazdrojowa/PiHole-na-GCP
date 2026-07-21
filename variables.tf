@@ -1,6 +1,7 @@
 variable "user_email" {
   description = "User email"
   type        = string
+  default     = ""
 }
 
 variable "os_login_user_email" {
@@ -12,6 +13,7 @@ variable "os_login_user_email" {
 variable "domain_name" {
   description = "Subdomain for Pi-hole"
   type        = string
+  default     = ""
 }
 
 variable "pihole_admin_password" {
