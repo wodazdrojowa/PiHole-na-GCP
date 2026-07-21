@@ -10,13 +10,6 @@ variable "os_login_user_email" {
   default     = ""
 }
 
-variable "domain_name" {
-  value       = var.domain_name
-  description = "Subdomain for Pi-hole"
-  type        = string.
-  default     = ""
-}
-
 variable "pihole_admin_password" {
   description = "Pi-Hole admin password"
   type        = string
@@ -57,4 +50,16 @@ variable "machine_name" {
   description = "Machine name"
   type        = string
   default     = "pihole-server"
+}
+
+output "ssh_private_key" {
+  value     = tls_private_key.ansible_ssh.private_key_openssh
+  sensitive = true
+}
+
+output "domain_name" {
+  value       = var.domain_name
+  description = "Subdomain for Pi-hole"
+  type        = string.
+  default     = ""
 }
