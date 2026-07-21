@@ -1,7 +1,6 @@
 variable "user_email" {
   description = "User email"
   type        = string
-  default     = "wodazdrojowa@gmail.com"
 }
 
 variable "os_login_user_email" {
@@ -13,7 +12,6 @@ variable "os_login_user_email" {
 variable "domain_name" {
   description = "Subdomain for Pi-hole"
   type        = string
-  default     = "pihole.owmor.de"
 }
 
 variable "pihole_admin_password" {
