@@ -142,11 +142,11 @@
       failed_when: pihole_install.rc not in [0, 1]
       register: pihole_install
 
-    - name: Configure pihole-FTL webserver to bind localhost:8080
-      shell: |
-        pihole-FTL --config webserver.port "127.0.0.1:8080,[::1]:8080"
-        pihole-FTL --config webserver.domain "{{ domain_name }}"
-      register: pihole_ftl_config
+#    - name: Configure pihole-FTL webserver to bind localhost:8080
+#      shell: |
+#        pihole-FTL --config webserver.port "127.0.0.1:8080,[::1]:8080"
+#        pihole-FTL --config webserver.domain "{{ domain_name }}"
+#      register: pihole_ftl_config
 
     - name: Restart pihole-FTL to apply webserver config
       systemd:
