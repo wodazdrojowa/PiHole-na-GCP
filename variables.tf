@@ -51,3 +51,8 @@ variable "machine_name" {
   type        = string
   default     = "pihole-server"
 }
+
+variable "domain_name" {
+  description = "Domain name for Let's Encrypt certificate and Pi-hole web interface"
+  type        = string
+}
