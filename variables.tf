@@ -14,6 +14,7 @@ variable "domain_name" {
   description = "Subdomain for Pi-hole"
   type        = string
   default     = ""
+  value       = var.domain_name
 }
 
 variable "pihole_admin_password" {

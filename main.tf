@@ -180,9 +180,10 @@ data "google_service_account" "spacelift" {
 output "os_login_user" {
   value = "sa_${data.google_service_account.spacelift.unique_id}"
 }
-output "user_email" {
-  value = var.user_email
-}
-output "domain_name" {
-  value = var.domain_name
-}
+
+#output "user_email" {
+#  value = var.user_email
+#}
+#output "domain_name" {
+#  value = var.domain_name
+#}
