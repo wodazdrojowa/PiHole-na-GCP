@@ -474,6 +474,41 @@
         state: restarted
       when: not ansible_check_mode
 
+
+    - name: Wdrożenie pliku przekierowującego do Nginx
+      hosts: webservers
+      become: true
+      vars:
+        target_url: "https://www.owmor.de"
+
+      tasks:
+    - name: Upewnij się, że katalog docelowy Nginx istnieje
+      ansible.builtin.file:
+        path: /var/www/html
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Utwórz plik index.html z kodem przekierowania
+      ansible.builtin.copy:
+        dest: /var/www/html/index.html
+        owner: www-data
+        group: www-data
+        mode: '0644'
+        content: |
+          <!DOCTYPE html>
+          <html lang="pl">
+          <head>
+              <meta charset="UTF-8">
+              <meta http-equiv="refresh" content="0; url={{ target_url }}">
+              <title>Przekierowywanie...</title>
+          </head>
+          <body>
+              <p>Jeśli przekierowanie nie nastąpi automatycznie, <a href="{{ target_url }}">kliknij tutaj</a>.</p>
+          </body>
+          </html>
+
 # ============================================================
 # Play 3: Verify and summarise results
 # ============================================================
