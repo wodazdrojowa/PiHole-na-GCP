@@ -474,7 +474,6 @@
         state: restarted
       when: not ansible_check_mode
 
-#      tasks:
     - name: Upewnij się, że katalog docelowy Nginx istnieje
       ansible.builtin.file:
         path: /var/www/html
