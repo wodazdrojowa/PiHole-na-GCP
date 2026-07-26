@@ -42,7 +42,7 @@
         timeout: 120
 
     # --- JEDEN TASK: update + upgrade + install ---
-    - name: Install all required packages and upgrade system
+    - name: Install all required packages
       apt:
         name:
           - curl
@@ -160,7 +160,7 @@
       changed_when: "'set' in ftl_config.stdout"
       when:
         - domain_name | length > 0
-        - tls_files.results[1].stat.exists | default(false)
+        - tls_files.results[0].stat.exists | default(false)
 
     - name: Create certbot deploy hook for auto-renewal
       copy:
@@ -305,13 +305,21 @@
       changed_when: false
       failed_when: false
 
-    - name: Check HTTPS admin panel
+    - name: Check HTTPS admin panel (skip cert validation for debug)
       uri:
         url: "https://{{ domain_name }}/admin"
         status_code: 200
-        validate_certs: yes
+        validate_certs: no
       register: web_admin
       ignore_errors: true
+      when: domain_name | length > 0
+
+    - name: Check certificate issuer
+      shell: |
+        echo | openssl s_client -connect {{ domain_name }}:443 -servername {{ domain_name }} 2>/dev/null |         openssl x509 -noout -issuer -subject || echo "CERT_CHECK_FAILED"
+      register: cert_info
+      changed_when: false
+      failed_when: false
       when: domain_name | length > 0
 
     - name: Show verification results
