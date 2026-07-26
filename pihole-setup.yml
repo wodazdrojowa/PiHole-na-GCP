@@ -41,7 +41,7 @@
         delay: 10
         timeout: 120
 
-    # --- JEDEN TASK: update + upgrade + install wszystkiego ---
+    # --- JEDEN TASK: update + upgrade + install ---
     - name: Install all required packages and upgrade system
       apt:
         name:
@@ -102,7 +102,7 @@
       register: pihole_install
       failed_when: pihole_install.rc not in [0, 1]
 
-    # --- Let's Encrypt + TLS (tylko gdy podano domenę) ---
+    # --- Let's Encrypt + TLS ---
     - name: Ensure Pi-hole webroot for certbot
       file:
         path: "{{ pihole_webroot }}/.well-known/acme-challenge"
@@ -178,7 +178,7 @@
         - domain_name | length > 0
         - tls_files.results[0].stat.exists | default(false)
 
-    # --- JEDEN RESTART FTL (zamiast dwóch) ---
+    # --- JEDEN RESTART FTL ---
     - name: Restart pihole-FTL to apply all changes
       systemd:
         name: pihole-FTL
@@ -244,7 +244,7 @@
         enabled: yes
       when: not ansible_check_mode
 
-    # --- UFW: wszystko w jednym tasku ---
+    # --- UFW ---
     - name: Configure UFW
       ufw:
         rule: "{{ item.rule | default('allow') }}"
@@ -278,8 +278,8 @@
     - name: Display summary
       debug:
         msg:
-          - "✓ Pi-hole: https://{{ domain_name }}/admin (HTTP fallback: http://{{ ansible_default_ipv4.address }}/admin)"
-          - "✓ WireGuard configs: /etc/wireguard/clients/"
+          - "Pi-hole: https://{{ domain_name }}/admin (HTTP: http://{{ ansible_default_ipv4.address }}/admin)"
+          - "WireGuard configs: /etc/wireguard/clients/"
           - "{{ summary.stdout_lines }}"
 
   handlers:
@@ -288,7 +288,7 @@
         state: reloaded
 
 # ============================================================
-# Play 3: Szybka weryfikacja (połączone taski)
+# Play 3: Szybka weryfikacja
 # ============================================================
 - name: Quick verification
   hosts: pihole_servers
