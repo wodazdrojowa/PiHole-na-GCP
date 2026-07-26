@@ -274,13 +274,6 @@
       register: summary
       changed_when: false
 
-    - name: Display summary
-      debug:
-        msg:
-          - "Pi-hole: https://{{ domain_name }}/admin (HTTP: http://{{ ansible_default_ipv4.address }}/admin)"
-          - "WireGuard configs: /etc/wireguard/clients/"
-          - "{{ summary.stdout_lines }}"
-
   handlers:
     - name: reload ufw
       ufw:
