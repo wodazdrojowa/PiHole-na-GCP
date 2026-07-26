@@ -348,7 +348,7 @@
           - "Web Interface: https://{{ domain_name }}/admin"
           - "WireGuard Client configs: /etc/wireguard/clients/"
           - "WireGuard Status: {{ 'RUNNING' if wg_status.rc == 0 else 'CHECK LOGS' }}"
-        verbosity: 0
+      verbosity: 0
 
     - name: Ensure WireGuard clients directory exists
       file:
