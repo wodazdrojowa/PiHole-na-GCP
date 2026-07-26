@@ -163,17 +163,28 @@
       failed_when: certbot_result.rc not in [0, 1]
       when: domain_name | length > 0
 
+    - name: Check if Let's Encrypt certificate exists on disk
+      stat:
+        path: "/etc/letsencrypt/live/{{ domain_name }}/fullchain.pem"
+      register: le_cert_stat
+      when: domain_name | length > 0
+
+    - name: Check if Pi-hole TLS PEM already exists
+      stat:
+        path: "{{ pihole_tls_pem }}"
+      register: pihole_tls_stat
+      when: domain_name | length > 0
+
     - name: Combine private key and fullchain into single PEM for Pi-hole v6
       shell: |
         set -e
-        cat /etc/letsencrypt/live/{{ domain_name }}/privkey.pem             /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem > {{ pihole_tls_pem }}.tmp
+        cat /etc/letsencrypt/live/{{ domain_name }}/privkey.pem \
+            /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem > {{ pihole_tls_pem }}.tmp
         mv {{ pihole_tls_pem }}.tmp {{ pihole_tls_pem }}
-      args:
-        creates: "{{ pihole_tls_pem }}"
       when:
         - domain_name | length > 0
-        - certbot_result.rc is defined
-        - certbot_result.rc == 0
+        - le_cert_stat.stat.exists | default(false)
+        - not pihole_tls_stat.stat.exists | default(false)
 
     - name: Set proper ownership and permissions on TLS PEM
       file:
@@ -181,7 +192,9 @@
         owner: pihole
         group: pihole
         mode: '0600'
-      when: domain_name | length > 0
+      when:
+        - domain_name | length > 0
+        - pihole_tls_stat.stat.exists | default(false)
 
     - name: Configure Pi-hole v6 domain name
       command: >
@@ -195,7 +208,9 @@
         pihole-FTL --config webserver.tls.cert {{ pihole_tls_pem }}
       register: tls_config
       changed_when: "'set' in tls_config.stdout"
-      when: domain_name | length > 0
+      when:
+        - domain_name | length > 0
+        - pihole_tls_stat.stat.exists | default(false)
 
     - name: Create certbot deploy hook for auto-renewal
       copy:
@@ -221,6 +236,7 @@
       when:
         - not ansible_check_mode
         - domain_name | length > 0
+        - pihole_tls_stat.stat.exists | default(false)
 
     # ============================================================
     # WIREGUARD
@@ -348,7 +364,7 @@
           - "Web Interface: https://{{ domain_name }}/admin"
           - "WireGuard Client configs: /etc/wireguard/clients/"
           - "WireGuard Status: {{ 'RUNNING' if wg_status.rc == 0 else 'CHECK LOGS' }}"
-      #verbosity: 0
+
 
     - name: Ensure WireGuard clients directory exists
       file:
