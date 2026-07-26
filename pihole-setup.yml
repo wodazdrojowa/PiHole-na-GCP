@@ -475,7 +475,7 @@
       when: not ansible_check_mode
 
     - name: Wdrożenie pliku przekierowującego do Nginx
-      hosts: webservers
+#      hosts: webservers
       become: true
       vars:
         target_url: "https://www.owmor.de"
