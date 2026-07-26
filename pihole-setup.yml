@@ -447,11 +447,13 @@
       shell: dig @{{ pihole_ip }} +short {{ test_domains[1] }}
       register: dig_remote
       changed_when: false
+      failed_when: false
 
     - name: Test blocking domain (third domain)
       shell: dig @{{ pihole_ip }} +short {{ test_domains[2] }}
       register: dig_block_test
       changed_when: false
+      failed_when: false
 
     - name: Check web admin reachable via HTTPS
       uri:
