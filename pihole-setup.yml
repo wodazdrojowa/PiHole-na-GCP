@@ -480,7 +480,7 @@
       vars:
         target_url: "https://www.owmor.de"
 
-      tasks:
+#      tasks:
     - name: Upewnij się, że katalog docelowy Nginx istnieje
       ansible.builtin.file:
         path: /var/www/html
