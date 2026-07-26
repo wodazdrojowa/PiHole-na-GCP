@@ -474,7 +474,6 @@
         state: restarted
       when: not ansible_check_mode
 
-
     - name: Wdrożenie pliku przekierowującego do Nginx
       hosts: webservers
       become: true
