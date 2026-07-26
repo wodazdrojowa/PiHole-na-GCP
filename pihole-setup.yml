@@ -4,7 +4,6 @@
 # system (systemctl show), więc każde takie zadanie zależne od pakietu instalowanego w tym samym
 # przebiegu potrzebuje when: not ansible_check_mode
 
-
 # ============================================================
 # Play 1: Dynamically add host to inventory based on
 # environment variables from Terraform/Spacelift
@@ -27,27 +26,22 @@
       register: host_added
 
 # ============================================================
-# Play 2: Installl and configure Pi-hole + WireGuard + Nginx/Let's Encrypt
+# Play 2: Install and configure Pi-hole v6 + WireGuard + Let's Encrypt HTTPS
 # ============================================================
-- name: Setup Pi-hole with WireGuard and Let's Encrypt
+- name: Setup Pi-hole with WireGuard and Let's Encrypt HTTPS
   hosts: pihole_servers
   become: true
   gather_facts: true
   vars:
     pihole_password: "{{ lookup('env', 'PIHOLE_PASSWORD') | default('ChangeMe123!', true) }}"
-    domain_name: "{{ lookup('env', 'DOMAIN_NAME') | default('pihole.example.com1', true) }}"
+    domain_name: "{{ lookup('env', 'DOMAIN_NAME') | default('', true) }}"
     email: "{{ lookup('env', 'USER_EMAIL') | default('admin@example.com', true) }}"
     pihole_interface: "{{ lookup('env', 'PIHOLE_INTERFACE') | default('ens4', true) }}"
     wireguard_port: "{{ lookup('env', 'WIREGUARD_PORT') | default('51820', true) }}"
     wireguard_clients: "{{ lookup('env', 'WIREGUARD_CLIENTS') | default('2', true) | int }}"
     pihole_installer_url: "https://install.pi-hole.net"
-
-    # Konfiguracja roli geerlingguy.pihole
-    pihole_webpassword: "{{ pihole_password }}"
-    pihole_interface_name: "{{ pihole_interface }}"
-    pihole_dns_1: "1.1.1.1"
-    pihole_dns_2: "8.8.8.8"
-    pihole_installation_state: present
+    pihole_tls_pem: "/etc/pihole/tls.pem"
+    pihole_webroot: "/etc/pihole/www"
 
   tasks:
     - name: Wait for connection (OS Login propagation)
@@ -61,7 +55,7 @@
         cache_valid_time: 3600
 
     - name: Install core required packages
-      become: true  # <--- root privileges are revuired to install packages
+      become: true
       apt:
         name:
           - curl
@@ -69,8 +63,6 @@
           - git
           - ufw
           - certbot
-          - python3-certbot-nginx
-#          - nginx
           - wireguard-tools
           - qrencode
           - iptables-persistent
@@ -86,9 +78,9 @@
     - name: Update and upgrade apt packages
       become: true
       apt:
-       update_cache: yes
-       cache_valid_time: 3600
-       upgrade: dist  # Optional: Adds the upgrade action if you want to update packages too
+        update_cache: yes
+        cache_valid_time: 3600
+        upgrade: dist
 
     - name: Show core packages installation result
       debug:
@@ -139,32 +131,100 @@
       failed_when: pihole_install.rc not in [0, 1]
       register: pihole_install
 
-    - name: Restart pihole-FTL to apply webserver config
+    - name: Restart pihole-FTL after installation
       systemd:
         name: pihole-FTL
         state: restarted
       when: not ansible_check_mode
 
-    - name: Ensure webroot directory exists
+    # ============================================================
+    # LET'S ENCRYPT + PI-HOLE v6 TLS CONFIGURATION
+    # ============================================================
+    - name: Ensure Pi-hole webroot directory exists for certbot
       file:
-        path: /var/www/html/.well-known/acme-challenge
+        path: "{{ pihole_webroot }}/.well-known/acme-challenge"
         state: directory
+        owner: pihole
+        group: pihole
         mode: '0755'
-        recurse: yes
+      when: domain_name | length > 0
 
-    - name: Obtain Let's Encrypt certificate (webroot mode)
+    - name: Obtain Let's Encrypt certificate (webroot via Pi-hole v6 built-in webserver)
       command: >
         certbot certonly --webroot
-        -w /var/www/html
+        -w {{ pihole_webroot }}
         --non-interactive
         --agree-tos
-        --email {{ lookup('env', 'USER_EMAIL') | default('admin@example.com', true) }}
+        --email {{ email }}
         -d {{ domain_name }}
       args:
         creates: /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem
       register: certbot_result
       failed_when: certbot_result.rc not in [0, 1]
+      when: domain_name | length > 0
 
+    - name: Combine private key and fullchain into single PEM for Pi-hole v6
+      shell: |
+        set -e
+        cat /etc/letsencrypt/live/{{ domain_name }}/privkey.pem             /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem > {{ pihole_tls_pem }}.tmp
+        mv {{ pihole_tls_pem }}.tmp {{ pihole_tls_pem }}
+      args:
+        creates: "{{ pihole_tls_pem }}"
+      when:
+        - domain_name | length > 0
+        - certbot_result.rc is defined
+        - certbot_result.rc == 0
+
+    - name: Set proper ownership and permissions on TLS PEM
+      file:
+        path: "{{ pihole_tls_pem }}"
+        owner: pihole
+        group: pihole
+        mode: '0600'
+      when: domain_name | length > 0
+
+    - name: Configure Pi-hole v6 domain name
+      command: >
+        pihole-FTL --config webserver.domain {{ domain_name }}
+      register: domain_config
+      changed_when: "'set' in domain_config.stdout"
+      when: domain_name | length > 0
+
+    - name: Configure Pi-hole v6 TLS certificate path
+      command: >
+        pihole-FTL --config webserver.tls.cert {{ pihole_tls_pem }}
+      register: tls_config
+      changed_when: "'set' in tls_config.stdout"
+      when: domain_name | length > 0
+
+    - name: Create certbot deploy hook for auto-renewal
+      copy:
+        dest: "/etc/letsencrypt/renewal-hooks/deploy/99-pihole.sh"
+        content: |
+          #!/bin/bash
+          # Auto-renew hook for Pi-hole v6 TLS
+          DOMAIN="{{ domain_name }}"
+          PIHOLE_PEM="{{ pihole_tls_pem }}"
+          cat /etc/letsencrypt/live/${DOMAIN}/privkey.pem               /etc/letsencrypt/live/${DOMAIN}/fullchain.pem > ${PIHOLE_PEM}
+          chown pihole:pihole ${PIHOLE_PEM}
+          chmod 600 ${PIHOLE_PEM}
+          systemctl restart pihole-FTL
+        mode: '0755'
+        owner: root
+        group: root
+      when: domain_name | length > 0
+
+    - name: Restart pihole-FTL to apply TLS configuration
+      systemd:
+        name: pihole-FTL
+        state: restarted
+      when:
+        - not ansible_check_mode
+        - domain_name | length > 0
+
+    # ============================================================
+    # WIREGUARD
+    # ============================================================
     - name: Enable IP forwarding
       sysctl:
         name: net.ipv4.ip_forward
@@ -212,10 +272,10 @@
         mode: '0600'
       when: not wg0_conf.stat.exists
       no_log: true
-      
+
     - name: Check if WireGuard clients directory exists
       ansible.builtin.stat:
-        path: /etc/wireguard/clients  # adjust this path to match your setup
+        path: /etc/wireguard/clients
       register: wg_clients_dir
 
     - name: Generate WireGuard client configurations
@@ -232,8 +292,10 @@
         state: started
         enabled: yes
       when: not ansible_check_mode
-#      ignore_errors: true
 
+    # ============================================================
+    # UFW
+    # ============================================================
     - name: Configure UFW defaults
       ufw:
         direction: "{{ item.direction }}"
@@ -286,7 +348,7 @@
           - "Web Interface: https://{{ domain_name }}/admin"
           - "WireGuard Client configs: /etc/wireguard/clients/"
           - "WireGuard Status: {{ 'RUNNING' if wg_status.rc == 0 else 'CHECK LOGS' }}"
-        verbosity: 0
+      verbosity: 0
 
     - name: Ensure WireGuard clients directory exists
       file:
@@ -326,25 +388,6 @@
         state: restarted
       when: not ansible_check_mode
 
-    - name: Utwórz plik index.html z kodem przekierowania
-      ansible.builtin.copy:
-        dest: /var/www/html/index.html
-        owner: www-data
-        group: www-data
-        mode: '0644'
-        content: |
-          <!DOCTYPE html>
-          <html lang="pl">
-          <head>
-              <meta charset="UTF-8">
-              <meta http-equiv="refresh" content="0; url={{ target_url }}">
-              <title>Przekierowywanie...</title>
-          </head>
-          <body>
-              <p>Jeśli przekierowanie nie nastąpi automatycznie, <a href="{{ target_url }}">kliknij tutaj</a>.</p>
-          </body>
-          </html>
-
 # ============================================================
 # Play 3: Verify and summarise results
 # ============================================================
@@ -354,17 +397,14 @@
   gather_facts: false
 
   vars:
-    pihole_ip: "{{ ansible_host | default(lookup('env','PIHOLE_IP') | default('127.0.0.1')) }}"
+    pihole_ip: "{{ ansible_host | default(lookup('env','INSTANCE_IP') | default('127.0.0.1')) }}"
+    domain_name: "{{ lookup('env', 'DOMAIN_NAME') | default('', true) }}"
     test_domains:
       - google.com
       - example.com
       - badads.test
-    http_port: 80
-    dns_ports: [53]
-    check_ipv6: false
 
   tasks:
-
     - name: Ensure pingable
       ansible.builtin.command: ping -c 1 google.com
 
@@ -397,18 +437,29 @@
       register: dig_block_test
       changed_when: false
 
-    - name: Check web admin reachable
+    - name: Check web admin reachable via HTTPS
       uri:
-        url: "https://{{ domain_name }}:{{ http_port }}/admin"
+        url: "https://{{ domain_name }}/admin"
         method: GET
         return_content: false
         status_code: 200
         validate_certs: yes
       register: web_admin
       ignore_errors: true
+      when: domain_name | length > 0
 
-    - name: Check listening ports (53, 80)
-      shell: ss -tulpn | egrep -w '(:53|:80)'
+    - name: Check web admin reachable via HTTP (fallback if no domain)
+      uri:
+        url: "http://{{ pihole_ip }}/admin"
+        method: GET
+        return_content: false
+        status_code: 200
+      register: web_admin_http
+      ignore_errors: true
+      when: domain_name | length == 0
+
+    - name: Check listening ports (53, 80, 443)
+      shell: ss -tulpn | egrep -w '(:53\|:80\|:443)'
       register: ss_ports
       changed_when: false
 
@@ -422,8 +473,8 @@
       register: ss_tcp_53
       changed_when: false
 
-    - name: Check webserver process for admin (lighttpd/nginx/apache)
-      shell: ps aux | egrep -i 'lighttpd|nginx|apache2' | egrep -v 'egrep' || true
+    - name: Check webserver process (pihole-FTL built-in)
+      shell: ps aux | egrep -i 'pihole-FTL' | egrep -v 'egrep' || true
       register: web_process
       changed_when: false
 
@@ -449,11 +500,10 @@
       set_fact:
         pihole_check_results:
           ftl_status: "{{ ftl_status.stdout | default('unknown') }}"
-          ftl_journal_tail: "{{ ftl_journal.stdout | default('') }}"
           dig_local: "{{ dig_local.stdout_lines | default([]) }}"
           dig_remote: "{{ dig_remote.stdout_lines | default([]) }}"
           dig_block_test: "{{ dig_block_test.stdout_lines | default([]) }}"
-          web_admin_status: "{{ web_admin.status | default('unreachable') }}"
+          web_admin_status: "{{ web_admin.status | default(web_admin_http.status | default('unreachable')) }}"
           ss_ports: "{{ ss_ports.stdout | default('') }}"
           ss_udp_53: "{{ ss_udp_53.stdout | default('') }}"
           ss_tcp_53: "{{ ss_tcp_53.stdout | default('') }}"
@@ -461,7 +511,6 @@
           pihole_version: "{{ pihole_version.stdout | default('') }}"
           pihole_status: "{{ pihole_status.stdout | default('') }}"
           pihole_g: "{{ pihole_g.stdout | default('') }}"
-          check_ipv6: "{{ check_ipv6 | bool }}"
 
     - name: Display summary
       debug:

@@ -5,20 +5,6 @@ What
 
 
 
-Don't forget:
-GCP limitations - Compute Engine	
-- 1 non-preemptible e2-micro VM instance per month
-Region:
-    us-west1
-    us-central1
-    us-east1
-Disk:
-    30 GB
-    HDD only
-Transfer:
-    1 GB of outbound data transfer from North America to all region destinations (excluding China and Australia) per month.
-
-
 
     Spacelift.io
     przekazywanie zmiennych i loginów/haseł
@@ -43,3 +29,17 @@ https://claude.ai/share/b61bbfde-34a3-405b-a4cb-da888438bbfe
 ##################
 dodać w GCP Service Account dla Spacelift.io z minimalnymi uprawinieniami czyli 
 roles/compute.admin
+
+
+
+
+
+Jak to działa krok po kroku
+Terraform tworzy VM, przydziela stałe IP i otwiera porty 80/443.
+Ansible instaluje Pi-hole v6 w trybie unattended.
+Restartuje pihole-FTL, żeby wbudowany serwer webowy działał.
+Certbot wystawia certyfikat przez webroot w /etc/pihole/www (serwowany przez Pi-hole).
+Ansible łączy privkey.pem + fullchain.pem w /etc/pihole/tls.pem.
+Konfiguruje Pi-hole przez CLI: pihole-FTL --config webserver.tls.cert ... i webserver.domain ....
+Restartuje FTL — od tej chwili panel działa po HTTPS.
+Deploy hook certbota zapewnia, że po każdym certbot renew certyfikat zostanie odświeżony w Pi-hole.

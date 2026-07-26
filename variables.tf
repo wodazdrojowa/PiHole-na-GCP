@@ -53,7 +53,7 @@ variable "machine_name" {
 }
 
 variable "domain_name" {
-  description = "Domain name for Let's Encrypt certificate and Pi-hole web interface"
+  description = "Domain name for Let's Encrypt certificate and Pi-hole web interface. Must resolve to the instance public IP."
   type        = string
-  default     = "."
+  default     = ""
 }
