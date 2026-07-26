@@ -70,7 +70,7 @@
           - ufw
           - certbot
           - python3-certbot-nginx
-          - nginx
+#          - nginx
           - wireguard-tools
           - qrencode
           - iptables-persistent
@@ -124,9 +124,6 @@
           QUERY_LOGGING=true
           WEBPASSWORD={{ pihole_password }}
           BLOCKING_ENABLED=true
-#          INSTALL_WEB_SERVER=true
-#          INSTALL_WEB_INTERFACE=true
-#          LIGHTTPD_ENABLED=true
         dest: /tmp/setupVars.conf
       when: not pihole_installed.stat.exists
       no_log: false
@@ -142,47 +139,11 @@
       failed_when: pihole_install.rc not in [0, 1]
       register: pihole_install
 
-#    - name: Configure pihole-FTL webserver to bind localhost:8080
-#      shell: |
-#        pihole-FTL --config webserver.port "127.0.0.1:8080,[::1]:8080"
-#        pihole-FTL --config webserver.domain "{{ domain_name }}"
-#      register: pihole_ftl_config
-
     - name: Restart pihole-FTL to apply webserver config
       systemd:
         name: pihole-FTL
         state: restarted
       when: not ansible_check_mode
-    # Ponizej jest bez sensu - "zatrzymaj lighttpd, żeby zwolnić port 80" zakłada, że lighttpd
-    # może tam być (np. domyślnie zainstalowany z jakimś innym pakietem, jak php-lighttpd, albo
-    # pozostałość po starszej wersji Pi-hole, która domyślnie używała lighttpd zamiast nginx).
-    # Jeśli wiesz na pewno, że Twój obraz bazowy nigdy nie ma lighttpd, ten task jest właściwie
-    # zbędny — ale zostawienie go z ignore_errors: yes jako zabezpieczenie "na wszelki wypadek"
-    # też ma sens, więc nie musisz go usuwać.
-#    - name: Stop lighttpd to free port 80
-#      systemd:
-#        name: lighttpd
-#        state: stopped
-#      ignore_errors: yes
-#      when: not ansible_check_mode # bez ukrywania prawdziwych błędów przy realnym apply - pomiń całe zadanie w trybie check, bo w planowaniu nie ma sensu je uruchamiać
-#      register: lighttpd_stop
-
-    - name: Deploy temporary HTTP-only nginx config (for cert issuance)
-      copy:
-        content: |
-          server {
-              listen 80;
-              server_name {{ domain_name }};
-
-              location /.well-known/acme-challenge/ {
-                root /var/www/html;
-              }
-              location / {
-                return 301 https://$host$request_uri;
-              }
-          }
-        dest: /etc/nginx/sites-available/pihole
-      notify: restart nginx
 
     - name: Ensure webroot directory exists
       file:
@@ -190,9 +151,6 @@
         state: directory
         mode: '0755'
         recurse: yes
-
-    - name: Reload nginx with HTTP-only config first
-      meta: flush_handlers
 
     - name: Obtain Let's Encrypt certificate (webroot mode)
       command: >
@@ -206,101 +164,6 @@
         creates: /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem
       register: certbot_result
       failed_when: certbot_result.rc not in [0, 1]
-
-    - name: Deploy final nginx config with SSL for Pi-hole v6
-      copy:
-        content: |
-          server {
-              listen 443 ssl http2;
-              server_name {{ domain_name }};
-
-              ssl_certificate /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem;
-              ssl_certificate_key /etc/letsencrypt/live/{{ domain_name }}/privkey.pem;
-
-              ssl_protocols TLSv1.2 TLSv1.3;
-              ssl_ciphers HIGH:!aNULL:!MD5;
-              ssl_prefer_server_ciphers on;
-
-              # Root → redirect do /admin/
-              location / {
-                  return 301 $scheme://$host/admin/;
-              }
-
-              # Pi-hole v6 WYMAGA osobnych location dla /admin/ i /api/
-              location /admin/ {
-                  proxy_pass http://127.0.0.1:8080/admin/;
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto $scheme;
-              }
-
-              location /api/ {
-                  proxy_pass http://127.0.0.1:8080/api/;
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto $scheme;
-              }
-          }
-
-          server {
-              listen 80;
-              server_name {{ domain_name }};
-
-              location /.well-known/acme-challenge/ {
-                  root /var/www/html;
-              }
-              location / {
-                  return 301 https://$host$request_uri;
-              }
-          }
-        dest: /etc/nginx/sites-available/pihole
-      notify: restart nginx
-
-    - name: Enable Nginx site
-      file:
-        src: /etc/nginx/sites-available/pihole
-        dest: /etc/nginx/sites-enabled/pihole
-        state: link
-        force: yes
-
-    - name: Remove default Nginx site
-      file:
-        path: /etc/nginx/sites-enabled/default
-        state: absent
-      notify: restart nginx
-
-#    - name: Check if lighttpd is installed
-#      stat:
-#        path: /usr/sbin/lighttpd
-#      register: lighttpd_binary
-
-#    - name: Check if lighttpd config exists
-#      stat:
-#        path: /etc/lighttpd/lighttpd.conf
-#      register: lighttpd_conf
-
-#    - name: Verify lighttpd was installed by Pi-hole
-#      debug:
-#        msg: "lighttpd installed: {{ lighttpd_binary.stat.exists }}, config exists: {{ lighttpd_conf.stat.exists }}"
-
-#    - name: Change lighttpd port to 8080
-#      lineinfile:
-#        path: /etc/lighttpd/lighttpd.conf
-#        regexp: '^server.port\s*='
-#        line: 'server.port = 8080'
-#      notify: restart lighttpd
-  #    when: lighttpd_stop.changed
-
-#    - name: Start and enable lighttpd
-#      systemd:
-#        name: lighttpd
-#        state: started
-#        enabled: yes
-#      when: 
-#        - not ansible_check_mode
-#        - lighttpd_conf.stat.exists
 
     - name: Enable IP forwarding
       sysctl:
@@ -319,11 +182,6 @@
       stat:
         path: /etc/wireguard/wg0.conf
       register: wg0_conf
-
- #   - name: Check if WireGuard clients directory already exists
-#      stat:
-#        path: /etc/wireguard/clients
-#      register: wg_clients_dir
 
     - name: Generate WireGuard server private key
       shell: wg genkey
@@ -462,25 +320,11 @@
         var: pihole_version_output.stdout_lines
 
   handlers:
-    - name: restart nginx
-      systemd:
-        name: nginx
-        state: restarted
-      when: not ansible_check_mode
-
     - name: restart pihole-FTL
       systemd:
         name: pihole-FTL
         state: restarted
       when: not ansible_check_mode
-
-    - name: Upewnij się, że katalog docelowy Nginx istnieje
-      ansible.builtin.file:
-        path: /var/www/html
-        state: directory
-        owner: www-data
-        group: www-data
-        mode: '0755'
 
     - name: Utwórz plik index.html z kodem przekierowania
       ansible.builtin.copy:
@@ -533,11 +377,6 @@
     - name: Pokaz wynik z konsoli
       ansible.builtin.debug:
         var: ftl_status
-
-    - name: Read last 200 lines of pihole-FTL journal
-      shell: journalctl -u pihole-FTL --no-pager | tail -n 200
-      register: ftl_journal
-      changed_when: false
 
     - name: Test local DNS (127.0.0.1) for primary domain
       shell: dig @127.0.0.1 +short {{ test_domains[0] }}
@@ -599,19 +438,6 @@
       register: pihole_status
       changed_when: false
       ignore_errors: true
-
-    - name: Check for IPv6 tests if enabled
-      when: check_ipv6 | bool
-      block:
-        - name: Test IPv6 local DNS (::1) for primary domain
-          shell: dig AAAA @::1 +short {{ test_domains[0] }}
-          register: dig_ipv6_local
-          changed_when: false
-
-        - name: Test IPv6 DNS using Pi-hole IPv6 for second domain
-          shell: dig AAAA @{{ pihole_ip }} +short {{ test_domains[1] }}
-          register: dig_ipv6_remote
-          changed_when: false
 
     - name: Update gravity lists (dry-run ping to pihole -g)
       shell: pihole -g --nolog
