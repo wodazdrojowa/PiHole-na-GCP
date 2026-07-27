@@ -29,7 +29,7 @@
     pihole_password: "{{ lookup('env', 'PIHOLE_PASSWORD') | default('ChangeMe123!', true) }}"
     domain_name: "{{ lookup('env', 'DOMAIN_NAME') | default('', true) }}"
     email: "{{ lookup('env', 'USER_EMAIL') | default('admin@example.com', true) }}"
-    pihole_interface: "{{ lookup('env', 'PIHOLE_INTERFACE') | default('ens4', true) }}"
+    pihole_interface: "{{ ansible_default_ipv4.interface }}"
     wireguard_port: "{{ lookup('env', 'WIREGUARD_PORT') | default('51820', true) }}"
     wireguard_clients: "{{ lookup('env', 'WIREGUARD_CLIENTS') | default('2', true) | int }}"
     pihole_tls_pem: "/etc/pihole/tls.pem"
@@ -258,6 +258,20 @@
         - { port: '{{ wireguard_port }}', proto: 'udp' }
       notify: reload ufw
 
+    - name: Allow UFW forwarding for VPN subnet
+      ufw:
+        rule: allow
+        route: yes
+        src: 10.8.0.0/24
+        dest: any
+
+    - name: Allow UFW forwarding from VPN to WAN
+      ufw:
+        route: yes
+        rule: allow
+        interface_in: wg0
+        interface_out: "{{ ansible_default_ipv4.interface }}"
+
     - name: Set UFW default policies and enable
       ufw:
         state: enabled
@@ -273,6 +287,13 @@
         systemctl is-active wg-quick@wg0 2>/dev/null || echo "inactive"
       register: summary
       changed_when: false
+
+    - name: Display summary
+      debug:
+        msg:
+          - "Pi-hole: https://{{ domain_name }}/admin (HTTP: http://{{ ansible_default_ipv4.address }}/admin)"
+          - "WireGuard configs: /etc/wireguard/clients/"
+          - "{{ summary.stdout_lines }}"
 
   handlers:
     - name: reload ufw
