@@ -70,10 +70,9 @@
       register: pihole_installed
 
     - name: Download Pi-hole installer
-      get_url:
-        url: "https://install.pi-hole.net"
-        dest: /tmp/pihole-install.sh
-        mode: '0755'
+      shell: "curl -fsSL https://install.pi-hole.net -o /tmp/pihole-install.sh && chmod +x /tmp/pihole-install.sh"
+      args:
+        creates: /tmp/pihole-install.sh
       when: not pihole_installed.stat.exists
 
     - name: Create Pi-hole setup vars file
