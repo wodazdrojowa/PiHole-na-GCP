@@ -30,7 +30,6 @@
     domain_name: "{{ lookup('env', 'DOMAIN_NAME') | default('', true) }}"
     email: "{{ lookup('env', 'USER_EMAIL') | default('admin@example.com', true) }}"
     pihole_interface: "{{ ansible_default_ipv4.interface }}"
-    #zmieniłem domyślny port z 51820 na 443 bo ten domyślny był blokowany przez operatora
     wireguard_port: "{{ lookup('env', 'WIREGUARD_PORT') | default('443', true) }}"
     wireguard_clients: "{{ lookup('env', 'WIREGUARD_CLIENTS') | default('2', true) | int }}"
     pihole_tls_pem: "/etc/pihole/tls.pem"
@@ -99,18 +98,27 @@
       register: pihole_install
       failed_when: pihole_install.rc not in [0, 1]
 
-    - name: Ensure Pi-hole webroot for certbot
-      file:
-        path: "{{ pihole_webroot }}/.well-known/acme-challenge"
-        state: directory
-        owner: pihole
-        group: pihole
-        mode: '0755'
+    - name: Install certbot DNS OVH plugin
+      apt:
+        name: python3-certbot-dns-ovh
+        state: present
       when: domain_name | length > 0
 
-    - name: Obtain Let's Encrypt certificate
+    - name: Create OVH credentials file
+      copy:
+        dest: "/etc/letsencrypt/ovh.ini"
+        content: |
+          dns_ovh_endpoint = ovh-eu
+          dns_ovh_application_key = {{ lookup('env', 'OVH_APPLICATION_KEY') | default('', true) }}
+          dns_ovh_application_secret = {{ lookup('env', 'OVH_APPLICATION_SECRET') | default('', true) }}
+          dns_ovh_consumer_key = {{ lookup('env', 'OVH_CONSUMER_KEY') | default('', true) }}
+        mode: '0600'
+      when: domain_name | length > 0
+
+    - name: Obtain Let's Encrypt certificate via DNS challenge
       command: >
-        certbot certonly --webroot -w {{ pihole_webroot }}
+        certbot certonly --dns-ovh
+        --dns-ovh-credentials /etc/letsencrypt/ovh.ini
         --non-interactive --agree-tos --email {{ email }} -d {{ domain_name }}
       args:
         creates: /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem

@@ -23,7 +23,7 @@ variable "ssh_public_key_path" {
 }
 
 variable "zone" {
-  description = "Compute instance zone "
+  description = "Compute instance zone"
   type        = string
   default     = "us-central1-a"
 }
@@ -35,7 +35,7 @@ variable "region" {
 }
 
 variable "project_id" {
-  description = "Project id "
+  description = "Project id"
   type        = string
   default     = "github-test-terraform-v1"
 }
@@ -56,4 +56,24 @@ variable "domain_name" {
   description = "Domain name for Let's Encrypt certificate and Pi-hole web interface. Must resolve to the instance public IP."
   type        = string
   default     = ""
+}
+
+variable "ovh_application_key" {
+  description = "OVH API Application Key for DNS challenge"
+  type        = string
+  default     = ""
+}
+
+variable "ovh_application_secret" {
+  description = "OVH API Application Secret for DNS challenge"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "ovh_consumer_key" {
+  description = "OVH API Consumer Key for DNS challenge"
+  type        = string
+  default     = ""
+  sensitive   = true
 }
