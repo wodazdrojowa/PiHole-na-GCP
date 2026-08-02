@@ -23,7 +23,7 @@
       DNS = 10.8.0.1
 
       [Peer]
-      PublicKey = {{ wg_server_public_key.stdout }}
+      PublicKey = {{ wg_server_public_key }}
       Endpoint = {{ ansible_default_ipv4.address }}:{{ wireguard_port }}
       AllowedIPs = 0.0.0.0/0
     dest: "/etc/wireguard/clients/client{{ client_number }}.conf"
@@ -33,17 +33,9 @@
   blockinfile:
     path: /etc/wireguard/wg0.conf
     marker: "# {mark} CLIENT {{ client_number }}"
-    create: yes  # <-- This will create the file if missing
+    create: yes
     mode: 0600
     block: |
       [Peer]
       PublicKey = {{ client_public_key.stdout }}
       AllowedIPs = 10.8.0.{{ client_number + 1 }}/32
-
-
-
-
-
-
-
-
