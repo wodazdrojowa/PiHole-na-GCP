@@ -33,7 +33,9 @@
     wireguard_port: "{{ lookup('env', 'WIREGUARD_PORT') | default('443', true) }}"
     wireguard_clients: "{{ lookup('env', 'WIREGUARD_CLIENTS') | default('2', true) | int }}"
     pihole_tls_pem: "/etc/pihole/tls.pem"
-    pihole_webroot: "/etc/pihole/www"
+    ovh_app_key: "{{ lookup('env', 'OVH_APPLICATION_KEY') | default('', true) }}"
+    ovh_app_secret: "{{ lookup('env', 'OVH_APPLICATION_SECRET') | default('', true) }}"
+    ovh_consumer_key: "{{ lookup('env', 'OVH_CONSUMER_KEY') | default('', true) }}"
 
   tasks:
     - name: Wait for connection (OS Login propagation)
@@ -49,11 +51,13 @@
           - git
           - ufw
           - certbot
+          - python3-certbot-dns-ovh
           - wireguard-tools
           - qrencode
           - iptables-persistent
           - wireguard
           - mc
+          - qrencode
         state: present
         update_cache: yes
         cache_valid_time: 3600
@@ -98,22 +102,21 @@
       register: pihole_install
       failed_when: pihole_install.rc not in [0, 1]
 
-    - name: Install certbot DNS OVH plugin
-      apt:
-        name: python3-certbot-dns-ovh
-        state: present
-      when: domain_name | length > 0
-
-    - name: Create OVH credentials file
+    # ============================================================
+    # LET'S ENCRYPT via DNS challenge (OVH)
+    # ============================================================
+    - name: Create OVH credentials file for certbot
       copy:
         dest: "/etc/letsencrypt/ovh.ini"
         content: |
           dns_ovh_endpoint = ovh-eu
-          dns_ovh_application_key = {{ lookup('env', 'OVH_APPLICATION_KEY') | default('', true) }}
-          dns_ovh_application_secret = {{ lookup('env', 'OVH_APPLICATION_SECRET') | default('', true) }}
-          dns_ovh_consumer_key = {{ lookup('env', 'OVH_CONSUMER_KEY') | default('', true) }}
+          dns_ovh_application_key = {{ ovh_app_key }}
+          dns_ovh_application_secret = {{ ovh_app_secret }}
+          dns_ovh_consumer_key = {{ ovh_consumer_key }}
         mode: '0600'
-      when: domain_name | length > 0
+      when:
+        - domain_name | length > 0
+        - ovh_app_key | length > 0
 
     - name: Obtain Let's Encrypt certificate via DNS challenge
       command: >
@@ -124,63 +127,84 @@
         creates: /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem
       register: certbot_result
       failed_when: certbot_result.rc not in [0, 1]
-      when: domain_name | length > 0
-
-    - name: Stat LE certificate and TLS PEM
-      stat:
-        path: "{{ item }}"
-      loop:
-        - "/etc/letsencrypt/live/{{ domain_name }}/fullchain.pem"
-        - "{{ pihole_tls_pem }}"
-      register: tls_files
-      when: domain_name | length > 0
+      when:
+        - domain_name | length > 0
+        - ovh_app_key | length > 0
 
     - name: Combine private key + fullchain into PEM for Pi-hole v6
       shell: |
         set -e
         cat /etc/letsencrypt/live/{{ domain_name }}/privkey.pem \
-            /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem > {{ pihole_tls_pem }}.tmp
-        mv {{ pihole_tls_pem }}.tmp {{ pihole_tls_pem }}
+            /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem > {{ pihole_tls_pem }}
+        chown pihole:pihole {{ pihole_tls_pem }}
+        chmod 600 {{ pihole_tls_pem }}
+      args:
+        creates: "{{ pihole_tls_pem }}"
       when:
         - domain_name | length > 0
-        - tls_files.results[0].stat.exists | default(false)
-        - not tls_files.results[1].stat.exists | default(false)
+        - certbot_result.rc is defined
+        - certbot_result.rc == 0
 
-    - name: Set ownership on TLS PEM
-      file:
-        path: "{{ pihole_tls_pem }}"
-        owner: pihole
-        group: pihole
-        mode: '0600'
+    - name: Configure Pi-hole v6 domain
+      command: "pihole-FTL --config webserver.domain {{ domain_name }}"
+      register: domain_config
+      changed_when: "'set' in domain_config.stdout"
       when:
         - domain_name | length > 0
-        - tls_files.results[1].stat.exists | default(false)
+        - certbot_result.rc is defined
+        - certbot_result.rc == 0
 
-    - name: Configure Pi-hole v6 domain and TLS
-      command: "pihole-FTL --config {{ item.key }} {{ item.value }}"
-      loop:
-        - { key: "webserver.domain", value: "{{ domain_name }}" }
-        - { key: "webserver.tls.cert", value: "{{ pihole_tls_pem }}" }
-      register: ftl_config
-      changed_when: "'set' in ftl_config.stdout"
+    - name: Configure Pi-hole v6 TLS certificate
+      command: "pihole-FTL --config webserver.tls.cert {{ pihole_tls_pem }}"
+      register: tls_config
+      changed_when: "'set' in tls_config.stdout"
       when:
         - domain_name | length > 0
-        - tls_files.results[0].stat.exists | default(false)
+        - certbot_result.rc is defined
+        - certbot_result.rc == 0
 
     - name: Create certbot deploy hook for auto-renewal
       copy:
         dest: "/etc/letsencrypt/renewal-hooks/deploy/99-pihole.sh"
         content: |
           #!/bin/bash
-          cat /etc/letsencrypt/live/{{ domain_name }}/privkey.pem \
-              /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem > {{ pihole_tls_pem }}
-          chown pihole:pihole {{ pihole_tls_pem }}
-          chmod 600 {{ pihole_tls_pem }}
+          # Auto-renew hook for Pi-hole v6 TLS
+          DOMAIN="{{ domain_name }}"
+          PIHOLE_PEM="{{ pihole_tls_pem }}"
+          cat /etc/letsencrypt/live/${DOMAIN}/privkey.pem \
+              /etc/letsencrypt/live/${DOMAIN}/fullchain.pem > ${PIHOLE_PEM}
+          chown pihole:pihole ${PIHOLE_PEM}
+          chmod 600 ${PIHOLE_PEM}
           systemctl restart pihole-FTL
         mode: '0755'
       when:
         - domain_name | length > 0
-        - tls_files.results[0].stat.exists | default(false)
+        - certbot_result.rc is defined
+        - certbot_result.rc == 0
+
+    - name: Create certbot pre-hook to stop pihole-FTL before renew
+      copy:
+        dest: "/etc/letsencrypt/renewal-hooks/pre/99-stop-pihole.sh"
+        content: |
+          #!/bin/bash
+          systemctl stop pihole-FTL
+        mode: '0755'
+      when:
+        - domain_name | length > 0
+        - certbot_result.rc is defined
+        - certbot_result.rc == 0
+
+    - name: Create certbot post-hook to start pihole-FTL after renew
+      copy:
+        dest: "/etc/letsencrypt/renewal-hooks/post/99-start-pihole.sh"
+        content: |
+          #!/bin/bash
+          systemctl start pihole-FTL
+        mode: '0755'
+      when:
+        - domain_name | length > 0
+        - certbot_result.rc is defined
+        - certbot_result.rc == 0
 
     - name: Restart pihole-FTL to apply all changes
       systemd:
@@ -188,6 +212,9 @@
         state: restarted
       when: not ansible_check_mode
 
+    # ============================================================
+    # WIREGUARD
+    # ============================================================
     - name: Enable IP forwarding
       sysctl:
         name: net.ipv4.ip_forward
@@ -248,6 +275,17 @@
         enabled: yes
       when: not ansible_check_mode
 
+    # ============================================================
+    # UFW
+    # ============================================================
+    - name: Set UFW default forward policy to ACCEPT
+      lineinfile:
+        path: /etc/default/ufw
+        regexp: '^DEFAULT_FORWARD_POLICY='
+        line: 'DEFAULT_FORWARD_POLICY="ACCEPT"'
+        state: present
+      notify: reload ufw
+
     - name: Configure UFW
       ufw:
         rule: "{{ item.rule | default('allow') }}"
@@ -260,14 +298,6 @@
         - { port: '443' }
         - { port: '53', proto: 'udp' }
         - { port: '{{ wireguard_port }}', proto: 'udp' }
-      notify: reload ufw
-
-    - name: Set UFW default forward policy to ACCEPT
-      lineinfile:
-        path: /etc/default/ufw
-        regexp: '^DEFAULT_FORWARD_POLICY='
-        line: 'DEFAULT_FORWARD_POLICY="ACCEPT"'
-        state: present
       notify: reload ufw
 
     - name: Allow UFW forwarding from VPN to WAN
@@ -290,12 +320,17 @@
         policy: deny
         direction: incoming
 
+    # ============================================================
+    # Podsumowanie
+    # ============================================================
     - name: Collect service statuses
       shell: |
         echo "=== Pi-hole ==="
         pihole -v 2>/dev/null || true
         echo "=== WireGuard ==="
         systemctl is-active wg-quick@wg0 2>/dev/null || echo "inactive"
+        echo "=== Certbot ==="
+        certbot certificates 2>/dev/null | grep -E "(Domains|Expiry)" || true
       register: summary
       changed_when: false
 
@@ -312,7 +347,7 @@
         state: reloaded
 
 # ============================================================
-# Play 3: Szybka weryfikacja
+# Play 3: Weryfikacja
 # ============================================================
 - name: Quick verification
   hosts: pihole_servers
@@ -331,28 +366,19 @@
         ss -tulpn | grep -E '(:53|:80|:443)' || true
         echo "--- FTL STATUS ---"
         systemctl is-active pihole-FTL || true
-        echo "--- VERSION ---"
-        pihole -v 2>/dev/null || true
+        echo "--- CERT ---"
+        echo | openssl s_client -connect {{ domain_name }}:443 -servername {{ domain_name }} 2>/dev/null | openssl x509 -noout -issuer -subject -dates 2>/dev/null || true
       register: verify
       changed_when: false
       failed_when: false
 
-    - name: Check HTTPS admin panel (skip cert validation for debug)
+    - name: Check HTTPS admin panel
       uri:
         url: "https://{{ domain_name }}/admin"
         status_code: 200
         validate_certs: no
       register: web_admin
       ignore_errors: true
-      when: domain_name | length > 0
-
-    - name: Check certificate issuer
-      shell: |
-        echo | openssl s_client -connect {{ domain_name }}:443 -servername {{ domain_name }} 2>/dev/null | \
-        openssl x509 -noout -issuer -subject || echo "CERT_CHECK_FAILED"
-      register: cert_info
-      changed_when: false
-      failed_when: false
       when: domain_name | length > 0
 
     - name: Show verification results

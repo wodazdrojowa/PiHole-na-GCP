@@ -75,7 +75,6 @@ resource "google_compute_firewall" "pihole_wireguard" {
   allow {
     protocol = "udp"
     ports    = ["443"]
-    #zmieniłem domyślny port z 51280 na 443 bo coś operator komórkowy blokował wysokie porty
   }
 
   source_ranges = ["0.0.0.0/0"]
