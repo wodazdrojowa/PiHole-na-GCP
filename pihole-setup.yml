@@ -131,6 +131,15 @@
         - domain_name | length > 0
         - ovh_app_key | length > 0
 
+    - name: Remove old self-signed PEM if exists
+      file:
+        path: "{{ pihole_tls_pem }}"
+        state: absent
+      when:
+        - domain_name | length > 0
+        - certbot_result.rc is defined
+        - certbot_result.rc == 0
+
     - name: Combine private key + fullchain into PEM for Pi-hole v6
       shell: |
         set -e
@@ -138,8 +147,6 @@
             /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem > {{ pihole_tls_pem }}
         chown pihole:pihole {{ pihole_tls_pem }}
         chmod 600 {{ pihole_tls_pem }}
-      args:
-        creates: "{{ pihole_tls_pem }}"
       when:
         - domain_name | length > 0
         - certbot_result.rc is defined
@@ -169,8 +176,10 @@
         content: |
           #!/bin/bash
           # Auto-renew hook for Pi-hole v6 TLS
+          # Always overwrite PEM to ensure fullchain (cert + intermediate) is included
           DOMAIN="{{ domain_name }}"
           PIHOLE_PEM="{{ pihole_tls_pem }}"
+          rm -f ${PIHOLE_PEM}
           cat /etc/letsencrypt/live/${DOMAIN}/privkey.pem \
               /etc/letsencrypt/live/${DOMAIN}/fullchain.pem > ${PIHOLE_PEM}
           chown pihole:pihole ${PIHOLE_PEM}
