@@ -253,6 +253,14 @@
         - { port: '{{ wireguard_port }}', proto: 'udp' }
       notify: reload ufw
 
+    - name: Set UFW default forward policy to ACCEPT
+      lineinfile:
+        path: /etc/default/ufw
+        regexp: '^DEFAULT_FORWARD_POLICY='
+        line: 'DEFAULT_FORWARD_POLICY="ACCEPT"'
+        state: present
+      notify: reload ufw
+
     - name: Allow UFW forwarding from VPN to WAN
       ufw:
         route: yes
