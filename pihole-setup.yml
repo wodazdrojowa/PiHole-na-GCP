@@ -30,7 +30,8 @@
     domain_name: "{{ lookup('env', 'DOMAIN_NAME') | default('', true) }}"
     email: "{{ lookup('env', 'USER_EMAIL') | default('admin@example.com', true) }}"
     pihole_interface: "{{ ansible_default_ipv4.interface }}"
-    wireguard_port: "{{ lookup('env', 'WIREGUARD_PORT') | default('51820', true) }}"
+    #zmieniłem domyślny port z 51820 na 443 bo ten domyślny był blokowany przez operatora
+    wireguard_port: "{{ lookup('env', 'WIREGUARD_PORT') | default('443', true) }}"
     wireguard_clients: "{{ lookup('env', 'WIREGUARD_CLIENTS') | default('2', true) | int }}"
     pihole_tls_pem: "/etc/pihole/tls.pem"
     pihole_webroot: "/etc/pihole/www"

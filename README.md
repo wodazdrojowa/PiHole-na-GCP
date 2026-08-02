@@ -1,3 +1,8 @@
+kod QR dla klienta wireguard generujeszz poleceniem
+sudo su
+# ZAKODUJ KONFIGURACJĘ KLIENTA, nie serwera!
+qrencode -t ansiutf8 < /etc/wireguard/clients/client1.conf
+
 # TerraformTest1forGCP
 Test Terraform i Ansible tworzace instancje na GCP
 
