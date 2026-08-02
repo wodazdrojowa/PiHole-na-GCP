@@ -41,7 +41,6 @@
         delay: 10
         timeout: 120
 
-    # --- JEDEN TASK: update + upgrade + install ---
     - name: Install all required packages
       apt:
         name:
@@ -63,7 +62,6 @@
       delay: 10
       until: apt_result is succeeded
 
-    # --- Pi-hole ---
     - name: Check if Pi-hole is already installed
       stat:
         path: /usr/local/bin/pihole
@@ -100,7 +98,6 @@
       register: pihole_install
       failed_when: pihole_install.rc not in [0, 1]
 
-    # --- Let's Encrypt + TLS ---
     - name: Ensure Pi-hole webroot for certbot
       file:
         path: "{{ pihole_webroot }}/.well-known/acme-challenge"
@@ -176,14 +173,12 @@
         - domain_name | length > 0
         - tls_files.results[0].stat.exists | default(false)
 
-    # --- JEDEN RESTART FTL ---
     - name: Restart pihole-FTL to apply all changes
       systemd:
         name: pihole-FTL
         state: restarted
       when: not ansible_check_mode
 
-    # --- WireGuard ---
     - name: Enable IP forwarding
       sysctl:
         name: net.ipv4.ip_forward
@@ -196,26 +191,28 @@
         path: /etc/wireguard/wg0.conf
       register: wg0_conf
 
-    - name: Generate WireGuard server keys
-      shell: |
-        PRIVATE=$(wg genkey)
-        PUBLIC=$(echo "$PRIVATE" | wg pubkey)
-        echo "PRIVATE=$PRIVATE"
-        echo "PUBLIC=$PUBLIC"
-      register: wg_keys
+    - name: Generate WireGuard server private key
+      shell: wg genkey
+      register: wg_server_privkey
       changed_when: false
       no_log: true
       when: not wg0_conf.stat.exists
 
+    - name: Generate WireGuard server public key
+      shell: echo "{{ wg_server_privkey.stdout }}" | wg pubkey
+      register: wg_server_pubkey
+      changed_when: false
+      no_log: true
+      when: not wg0_conf.stat.exists
+
+    - name: Save server public key for client configs
+      set_fact:
+        wg_server_public_key: "{{ wg_server_pubkey.stdout }}"
+      when: not wg0_conf.stat.exists
+
     - name: Create WireGuard server config
-      copy:
-        content: |
-          [Interface]
-          Address = 10.8.0.1/24
-          ListenPort = {{ wireguard_port }}
-          PrivateKey = {{ wg_keys.stdout_lines[0] | regex_replace('PRIVATE=', '') }}
-          PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o {{ pihole_interface }} -j MASQUERADE
-          PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o {{ pihole_interface }} -j MASQUERADE
+      template:
+        src: wg0.conf.j2
         dest: /etc/wireguard/wg0.conf
         mode: '0600'
       when: not wg0_conf.stat.exists
@@ -242,7 +239,6 @@
         enabled: yes
       when: not ansible_check_mode
 
-    # --- UFW ---
     - name: Configure UFW
       ufw:
         rule: "{{ item.rule | default('allow') }}"
@@ -257,6 +253,13 @@
         - { port: '{{ wireguard_port }}', proto: 'udp' }
       notify: reload ufw
 
+    - name: Allow UFW forwarding from VPN to WAN
+      ufw:
+        route: yes
+        rule: allow
+        interface_in: wg0
+        interface_out: "{{ pihole_interface }}"
+
     - name: Allow UFW forwarding for VPN subnet
       ufw:
         rule: allow
@@ -264,20 +267,12 @@
         src: 10.8.0.0/24
         dest: any
 
-    - name: Allow UFW forwarding from VPN to WAN
-      ufw:
-        route: yes
-        rule: allow
-        interface_in: wg0
-        interface_out: "{{ ansible_default_ipv4.interface }}"
-
     - name: Set UFW default policies and enable
       ufw:
         state: enabled
         policy: deny
         direction: incoming
 
-    # --- Podsumowanie ---
     - name: Collect service statuses
       shell: |
         echo "=== Pi-hole ==="
@@ -336,7 +331,8 @@
 
     - name: Check certificate issuer
       shell: |
-        echo | openssl s_client -connect {{ domain_name }}:443 -servername {{ domain_name }} 2>/dev/null |         openssl x509 -noout -issuer -subject || echo "CERT_CHECK_FAILED"
+        echo | openssl s_client -connect {{ domain_name }}:443 -servername {{ domain_name }} 2>/dev/null | \
+        openssl x509 -noout -issuer -subject || echo "CERT_CHECK_FAILED"
       register: cert_info
       changed_when: false
       failed_when: false
