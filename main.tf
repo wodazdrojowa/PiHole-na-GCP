@@ -4,8 +4,7 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 5.0"
     }
-
-      tls = {
+    tls = {
       source  = "hashicorp/tls"
       version = "~> 4.0"
     }
@@ -13,10 +12,10 @@ terraform {
 }
 
 provider "google" {
-  project = var.project_id
+  project     = var.project_id
   credentials = file("/mnt/workspace/gcp-key.json")
-  region  = var.region
-  zone    = var.zone
+  region      = var.region
+  zone        = var.zone
 }
 
 # Static IP address
@@ -75,7 +74,7 @@ resource "google_compute_firewall" "pihole_wireguard" {
 
   allow {
     protocol = "udp"
-    ports    = ["51820"]
+    ports    = ["443"]
   }
 
   source_ranges = ["0.0.0.0/0"]
@@ -88,8 +87,7 @@ resource "tls_private_key" "ansible_ssh" {
 }
 
 # 2. Pobranie tożsamości service account
-data "google_client_openid_userinfo" "me" {
-}
+data "google_client_openid_userinfo" "me" {}
 
 # 3. Rejestracja klucza publicznego w OS Login
 resource "google_os_login_ssh_public_key" "ansible" {
@@ -99,22 +97,23 @@ resource "google_os_login_ssh_public_key" "ansible" {
 
 # 4. Nadanie roli OS Login (używa zmiennej)
 resource "google_project_iam_member" "os_login_admin" {
-  project = "github-test-terraform-v1"
+  project = var.project_id
   role    = "roles/compute.osAdminLogin"
   member  = "user:${var.os_login_user_email}"
 }
 
 # Compute instance
 resource "google_compute_instance" "pihole" {
-  name         = var.machine_name
-  machine_type = var.machine_type
-  tags         = ["pihole"]
+  name           = var.machine_name
+  machine_type   = var.machine_type
+  tags           = ["pihole"]
+  can_ip_forward = true
 
   boot_disk {
     initialize_params {
       image = "ubuntu-os-cloud/ubuntu-2204-lts"
-      size  = 30    # 30GB is a maximum free size
-      type = "pd-standard"  # HDD is free tier, SSD is paid
+      size  = 30 # 30GB is a maximum free size
+      type  = "pd-standard" # HDD is free tier, SSD is paid
     }
   }
 
@@ -124,14 +123,6 @@ resource "google_compute_instance" "pihole" {
       nat_ip = google_compute_address.pihole_ip.address
     }
   }
-
-#metadata = {
-#    ssh-keys = "${var.ssh_user}:${tls_private_key.ssh_key.public_key_openssh}"
-#  }
-
-#  metadata = {
-#    ssh-keys = "${var.ssh_user}:${file(var.ssh_public_key_path)}"
-#  }
 
   metadata_startup_script = <<-EOF
     #!/bin/bash
@@ -157,6 +148,7 @@ output "instance_name" {
   value       = google_compute_instance.pihole.name
   description = "Name of the instance"
 }
+
 # Zapis klucza prywatnego do pliku (dla Ansible)
 resource "local_file" "ansible_ssh_private_key" {
   filename        = "./ansible_ssh_key"
@@ -168,15 +160,15 @@ resource "local_file" "ansible_ssh_private_key" {
 resource "local_file" "ansible_inventory" {
   filename = "./inventory.ini"
   content  = <<-EOT
-    [pihole-server]
-    pihole-server ansible_host=${google_compute_address.pihole_ip.address}
+[pihole-server]
+pihole-server ansible_host=${google_compute_address.pihole_ip.address}
 
-    [pihole-server:vars]
-    ansible_user=sa_${data.google_service_account.spacelift.unique_id}
-    ansible_python_interpreter=/usr/bin/python3
-    ansible_ssh_private_key_file=./ansible_ssh_key
-    ansible_ssh_common_args=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
-  EOT
+[pihole-server:vars]
+ansible_user=sa_${data.google_service_account.spacelift.unique_id}
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_private_key_file=./ansible_ssh_key
+ansible_ssh_common_args=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+EOT
 }
 
 # Pobierz dane service account z unique_id

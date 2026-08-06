@@ -1,0 +1,6 @@
+[Interface]
+Address = 10.8.0.1/24
+ListenPort = {{ wireguard_port }}
+PrivateKey = {{ wg_server_privkey.stdout }}
+PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o {{ pihole_interface }} -j MASQUERADE
+PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o {{ pihole_interface }} -j MASQUERADE

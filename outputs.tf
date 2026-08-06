@@ -3,6 +3,7 @@ output "ssh_private_key" {
   sensitive = true
 }
 
-#output "os_login_user" {
-#  value = google_os_login_ssh_public_key.ansible.user
-#}
+output "domain_name" {
+  value       = var.domain_name
+  description = "Subdomain for Pi-hole"
+}
