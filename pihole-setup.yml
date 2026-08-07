@@ -33,9 +33,6 @@
     wireguard_port: "{{ lookup('env', 'WIREGUARD_PORT') | default('443', true) }}"
     wireguard_clients: "{{ lookup('env', 'WIREGUARD_CLIENTS') | default('2', true) | int }}"
     pihole_tls_pem: "/etc/pihole/tls.pem"
-    ovh_app_key: "{{ lookup('env', 'OVH_APPLICATION_KEY') | default('', true) }}"
-    ovh_app_secret: "{{ lookup('env', 'OVH_APPLICATION_SECRET') | default('', true) }}"
-    ovh_consumer_key: "{{ lookup('env', 'OVH_CONSUMER_KEY') | default('', true) }}"
 
   tasks:
     - name: Wait for connection (OS Login propagation)
