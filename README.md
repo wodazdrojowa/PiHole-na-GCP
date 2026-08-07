@@ -99,3 +99,45 @@ Ansible łączy privkey.pem + fullchain.pem w /etc/pihole/tls.pem.
 Konfiguruje Pi-hole przez CLI: pihole-FTL --config webserver.tls.cert ... i webserver.domain ....
 Restartuje FTL — od tej chwili panel działa po HTTPS.
 Deploy hook certbota zapewnia, że po każdym certbot renew certyfikat zostanie odświeżony w Pi-hole.
+
+
+Jak uzyskać klucze OVH
+Wejdź na https://eu.api.ovh.com/createToken/
+Zaloguj się do konta OVH
+Wypełnij formularz:
+Application name: certbot
+Application description: Let's Encrypt DNS challenge
+Validity: Unlimited
+Rights:
+GET → /domain/zone/owmor.de/*
+POST → /domain/zone/owmor.de/record
+DELETE → /domain/zone/owmor.de/record/*
+Kliknij Create keys
+Zapisz:
+Application Key
+Application Secret
+Consumer Key
+Krok 3: Wystaw certyfikat
+bash
+sudo certbot certonly \
+  --dns-ovh \
+  --dns-ovh-credentials /etc/letsencrypt/ovh.ini \
+  -d pihole.owmor.de
+Krok 4: Skonfiguruj Pi-hole
+bash
+sudo bash -c 'cat /etc/letsencrypt/live/pihole.owmor.de/privkey.pem /etc/letsencrypt/live/pihole.owmor.de/fullchain.pem > /etc/pihole/tls.pem'
+sudo chown pihole:pihole /etc/pihole/tls.pem
+sudo chmod 600 /etc/pihole/tls.pem
+sudo pihole-FTL --config webserver.domain pihole.owmor.de
+sudo pihole-FTL --config webserver.tls.cert /etc/pihole/tls.pem
+sudo systemctl restart pihole-FTL
+Krok 5: Auto-odnawianie
+bash
+sudo tee /etc/letsencrypt/renewal-hooks/deploy/99-pihole.sh << 'EOF'
+#!/bin/bash
+cat /etc/letsencrypt/live/pihole.owmor.de/privkey.pem /etc/letsencrypt/live/pihole.owmor.de/fullchain.pem > /etc/pihole/tls.pem
+chown pihole:pihole /etc/pihole/tls.pem
+chmod 600 /etc/pihole/tls.pem
+systemctl restart pihole-FTL
+EOF
+sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/99-pihole.sh
