@@ -26,7 +26,7 @@
       [Peer]
       PublicKey = {{ wg_server_public_key }}
       Endpoint = {{ ansible_host }}:{{ wireguard_port }}
-      AllowedIPs = 0.0.0.0/0
+      AllowedIPs = 10.8.0.1/32
       PersistentKeepalive = 25
     dest: "/etc/wireguard/clients/client{{ client_number }}.conf"
     mode: '0600'
