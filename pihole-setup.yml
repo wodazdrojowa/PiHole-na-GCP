@@ -48,7 +48,6 @@
           - git
           - ufw
           - certbot
-          - python3-certbot-dns-ovh
           - wireguard-tools
           - qrencode
           - iptables-persistent
@@ -100,34 +99,8 @@
       failed_when: pihole_install.rc not in [0, 1]
 
     # ============================================================
-    # LET'S ENCRYPT via DNS challenge (OVH)
+    # LET'S ENCRYPT via DNS challenge
     # ============================================================
-    - name: Create OVH credentials file for certbot
-      copy:
-        dest: "/etc/letsencrypt/ovh.ini"
-        content: |
-          dns_ovh_endpoint = ovh-eu
-          dns_ovh_application_key = {{ ovh_app_key }}
-          dns_ovh_application_secret = {{ ovh_app_secret }}
-          dns_ovh_consumer_key = {{ ovh_consumer_key }}
-        mode: '0600'
-      when:
-        - domain_name | length > 0
-        - ovh_app_key | length > 0
-
-    - name: Obtain Let's Encrypt certificate via DNS challenge
-      command: >
-        certbot certonly --dns-ovh
-        --dns-ovh-credentials /etc/letsencrypt/ovh.ini
-        --non-interactive --agree-tos --email {{ email }} -d {{ domain_name }}
-      args:
-        creates: /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem
-      register: certbot_result
-      failed_when: certbot_result.rc not in [0, 1]
-      when:
-        - domain_name | length > 0
-        - ovh_app_key | length > 0
-
     - name: Remove old self-signed PEM if exists
       file:
         path: "{{ pihole_tls_pem }}"
