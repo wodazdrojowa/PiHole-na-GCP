@@ -99,28 +99,57 @@
       failed_when: pihole_install.rc not in [0, 1]
 
     # ============================================================
-    # LET'S ENCRYPT via DNS challenge
+    # LET'S ENCRYPT — standalone (port 80)
     # ============================================================
-    - name: Remove old self-signed PEM if exists
-      file:
-        path: "{{ pihole_tls_pem }}"
-        state: absent
+    - name: Check if Let's Encrypt certificate already exists
+      stat:
+        path: "/etc/letsencrypt/live/{{ domain_name }}/fullchain.pem"
+      register: le_cert_stat
+      when: domain_name | length > 0
+
+    - name: Stop pihole-FTL before certbot (free port 80)
+      systemd:
+        name: pihole-FTL
+        state: stopped
       when:
         - domain_name | length > 0
-        - certbot_result.rc is defined
-        - certbot_result.rc == 0
+        - not le_cert_stat.stat.exists | default(false)
 
-    - name: Combine private key + fullchain into PEM for Pi-hole v6
+    - name: Obtain Let's Encrypt certificate (standalone)
+      command: >
+        certbot certonly --standalone
+        --non-interactive --agree-tos --email {{ email }} -d {{ domain_name }}
+      register: certbot_result
+      failed_when: certbot_result.rc not in [0, 1]
+      when:
+        - domain_name | length > 0
+        - not le_cert_stat.stat.exists | default(false)
+
+    - name: Start pihole-FTL after certbot
+      systemd:
+        name: pihole-FTL
+        state: started
+      when:
+        - domain_name | length > 0
+        - not le_cert_stat.stat.exists | default(false)
+
+    - name: Check LE certificate after certbot (regardless of result)
+      stat:
+        path: "/etc/letsencrypt/live/{{ domain_name }}/fullchain.pem"
+      register: le_cert_final
+      when: domain_name | length > 0
+
+    - name: Remove old PEM and create new from LE fullchain
       shell: |
         set -e
+        rm -f {{ pihole_tls_pem }}
         cat /etc/letsencrypt/live/{{ domain_name }}/privkey.pem \
             /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem > {{ pihole_tls_pem }}
         chown pihole:pihole {{ pihole_tls_pem }}
         chmod 600 {{ pihole_tls_pem }}
       when:
         - domain_name | length > 0
-        - certbot_result.rc is defined
-        - certbot_result.rc == 0
+        - le_cert_final.stat.exists | default(false)
 
     - name: Configure Pi-hole v6 domain
       command: "pihole-FTL --config webserver.domain {{ domain_name }}"
@@ -128,8 +157,7 @@
       changed_when: "'set' in domain_config.stdout"
       when:
         - domain_name | length > 0
-        - certbot_result.rc is defined
-        - certbot_result.rc == 0
+        - le_cert_final.stat.exists | default(false)
 
     - name: Configure Pi-hole v6 TLS certificate
       command: "pihole-FTL --config webserver.tls.cert {{ pihole_tls_pem }}"
@@ -137,8 +165,7 @@
       changed_when: "'set' in tls_config.stdout"
       when:
         - domain_name | length > 0
-        - certbot_result.rc is defined
-        - certbot_result.rc == 0
+        - le_cert_final.stat.exists | default(false)
 
     - name: Create certbot deploy hook for auto-renewal
       copy:
@@ -146,7 +173,6 @@
         content: |
           #!/bin/bash
           # Auto-renew hook for Pi-hole v6 TLS
-          # Always overwrite PEM to ensure fullchain (cert + intermediate) is included
           DOMAIN="{{ domain_name }}"
           PIHOLE_PEM="{{ pihole_tls_pem }}"
           rm -f ${PIHOLE_PEM}
@@ -158,10 +184,9 @@
         mode: '0755'
       when:
         - domain_name | length > 0
-        - certbot_result.rc is defined
-        - certbot_result.rc == 0
+        - le_cert_final.stat.exists | default(false)
 
-    - name: Create certbot pre-hook to stop pihole-FTL before renew
+    - name: Create certbot pre-hook (stop pihole-FTL before renew)
       copy:
         dest: "/etc/letsencrypt/renewal-hooks/pre/99-stop-pihole.sh"
         content: |
@@ -170,10 +195,9 @@
         mode: '0755'
       when:
         - domain_name | length > 0
-        - certbot_result.rc is defined
-        - certbot_result.rc == 0
+        - le_cert_final.stat.exists | default(false)
 
-    - name: Create certbot post-hook to start pihole-FTL after renew
+    - name: Create certbot post-hook (start pihole-FTL after renew)
       copy:
         dest: "/etc/letsencrypt/renewal-hooks/post/99-start-pihole.sh"
         content: |
@@ -182,14 +206,28 @@
         mode: '0755'
       when:
         - domain_name | length > 0
-        - certbot_result.rc is defined
-        - certbot_result.rc == 0
+        - le_cert_final.stat.exists | default(false)
 
-    - name: Restart pihole-FTL to apply all changes
+    - name: Restart pihole-FTL to apply TLS configuration
       systemd:
         name: pihole-FTL
         state: restarted
-      when: not ansible_check_mode
+      when:
+        - not ansible_check_mode
+        - domain_name | length > 0
+        - le_cert_final.stat.exists | default(false)
+
+    # ============================================================
+    # PRZEKIEROWANIE HTTP -> HTTPS (dodawane PO certbocie)
+    # ============================================================
+    - name: Redirect HTTP to HTTPS via iptables
+      shell: |
+        iptables -t nat -C PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 443 2>/dev/null || \
+        iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 443
+        iptables-save > /etc/iptables/rules.v4
+      when:
+        - domain_name | length > 0
+        - le_cert_final.stat.exists | default(false)
 
     # ============================================================
     # WIREGUARD
@@ -273,19 +311,11 @@
         port: "{{ item.port }}"
       loop:
         - { port: '22' }
+        - { port: '80' }
         - { port: '443' }
         - { port: '53', proto: 'udp' }
         - { port: '{{ wireguard_port }}', proto: 'udp' }
       notify: reload ufw
-
-    - name: Redirect HTTP to HTTPS via iptables
-      shell: |
-        iptables -t nat -C PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 443 2>/dev/null || \
-        iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 443
-        iptables-save > /etc/iptables/rules.v4
-      args:
-        creates: /etc/iptables/rules.v4
-      when: domain_name | length > 0
 
     - name: Allow UFW forwarding from VPN to WAN
       ufw:

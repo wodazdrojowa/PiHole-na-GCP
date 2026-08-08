@@ -43,7 +43,7 @@ resource "google_compute_firewall" "pihole_web" {
 
   allow {
     protocol = "tcp"
-    ports    = ["80", "443"]
+    ports    = ["80", "443"]  # Port 80 potrzebny dla certbota
   }
 
   source_ranges = ["0.0.0.0/0"]
@@ -112,8 +112,8 @@ resource "google_compute_instance" "pihole" {
   boot_disk {
     initialize_params {
       image = "ubuntu-os-cloud/ubuntu-2204-lts"
-      size  = 30 # 30GB is a maximum free size
-      type  = "pd-standard" # HDD is free tier, SSD is paid
+      size  = 30
+      type  = "pd-standard"
     }
   }
 
@@ -127,7 +127,7 @@ resource "google_compute_instance" "pihole" {
   metadata_startup_script = <<-EOF
     #!/bin/bash
     apt-get update
-#    apt-get install -y python3 python3-pip
+    apt-get install -y python3 python3-pip
   EOF
 
   service_account {
