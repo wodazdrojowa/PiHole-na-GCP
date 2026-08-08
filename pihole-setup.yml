@@ -300,11 +300,19 @@
         port: "{{ item.port }}"
       loop:
         - { port: '22' }
-        - { port: '80' }
         - { port: '443' }
         - { port: '53', proto: 'udp' }
         - { port: '{{ wireguard_port }}', proto: 'udp' }
       notify: reload ufw
+
+    - name: Redirect HTTP to HTTPS via iptables
+      shell: |
+        iptables -t nat -C PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 443 2>/dev/null || \
+        iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 443
+        iptables-save > /etc/iptables/rules.v4
+      args:
+        creates: /etc/iptables/rules.v4
+      when: domain_name | length > 0
 
     - name: Allow UFW forwarding from VPN to WAN
       ufw:
