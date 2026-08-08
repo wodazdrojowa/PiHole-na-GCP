@@ -4,6 +4,7 @@ sudo su
 qrencode -t ansiutf8 < /etc/wireguard/clients/client1.conf
 
 
+
 diagnostyka
 
 # 1. Sprawdź czy IP forwarding jest włączony w GCP
