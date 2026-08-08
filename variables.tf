@@ -58,22 +58,20 @@ variable "domain_name" {
   default     = ""
 }
 
-variable "ovh_application_key" {
-  description = "OVH API Application Key for DNS challenge"
+variable "wireguard_port" {
+  description = "WireGuard UDP port"
   type        = string
-  default     = ""
+  default     = "51820"
 }
 
-variable "ovh_application_secret" {
-  description = "OVH API Application Secret for DNS challenge"
+variable "gcp_credentials_path" {
+  description = "Path to GCP service account JSON key"
   type        = string
-  default     = ""
-  sensitive   = true
+  default     = "/mnt/workspace/gcp-key.json"
 }
 
-variable "ovh_consumer_key" {
-  description = "OVH API Consumer Key for DNS challenge"
+variable "spacelift_service_account_id" {
+  description = "GCP Service Account ID for Spacelift"
   type        = string
-  default     = ""
-  sensitive   = true
+  default     = "service-account-for-spacelift"
 }

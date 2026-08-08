@@ -30,7 +30,7 @@
     domain_name: "{{ lookup('env', 'DOMAIN_NAME') | default('', true) }}"
     email: "{{ lookup('env', 'USER_EMAIL') | default('admin@example.com', true) }}"
     pihole_interface: "{{ ansible_default_ipv4.interface }}"
-    wireguard_port: "{{ lookup('env', 'WIREGUARD_PORT') | default('443', true) }}"
+    wireguard_port: "{{ lookup('env', 'WIREGUARD_PORT') | default('51820', true) }}"
     wireguard_clients: "{{ lookup('env', 'WIREGUARD_CLIENTS') | default('2', true) | int }}"
     pihole_tls_pem: "/etc/pihole/tls.pem"
 
@@ -53,7 +53,6 @@
           - iptables-persistent
           - wireguard
           - mc
-          - qrencode
         state: present
         update_cache: yes
         cache_valid_time: 3600
@@ -98,6 +97,9 @@
       register: pihole_install
       failed_when: pihole_install.rc not in [0, 1]
 
+    - name: Populate service facts
+      ansible.builtin.service_facts:
+
     # ============================================================
     # LET'S ENCRYPT — standalone (port 80)
     # ============================================================
@@ -114,6 +116,7 @@
       when:
         - domain_name | length > 0
         - not le_cert_stat.stat.exists | default(false)
+        - "'pihole-FTL.service' in services"
 
     - name: Obtain Let's Encrypt certificate (standalone)
       command: >
@@ -132,6 +135,7 @@
       when:
         - domain_name | length > 0
         - not le_cert_stat.stat.exists | default(false)
+        - "'pihole-FTL.service' in services"
 
     - name: Check LE certificate after certbot (regardless of result)
       stat:
@@ -144,7 +148,7 @@
         set -e
         rm -f {{ pihole_tls_pem }}
         cat /etc/letsencrypt/live/{{ domain_name }}/privkey.pem \
-            /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem > {{ pihole_tls_pem }}
+          /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem > {{ pihole_tls_pem }}
         chown pihole:pihole {{ pihole_tls_pem }}
         chmod 600 {{ pihole_tls_pem }}
       when:
@@ -177,7 +181,7 @@
           PIHOLE_PEM="{{ pihole_tls_pem }}"
           rm -f ${PIHOLE_PEM}
           cat /etc/letsencrypt/live/${DOMAIN}/privkey.pem \
-              /etc/letsencrypt/live/${DOMAIN}/fullchain.pem > ${PIHOLE_PEM}
+            /etc/letsencrypt/live/${DOMAIN}/fullchain.pem > ${PIHOLE_PEM}
           chown pihole:pihole ${PIHOLE_PEM}
           chmod 600 ${PIHOLE_PEM}
           systemctl restart pihole-FTL
@@ -216,6 +220,7 @@
         - not ansible_check_mode
         - domain_name | length > 0
         - le_cert_final.stat.exists | default(false)
+        - "'pihole-FTL.service' in services"
 
     # ============================================================
     # PRZEKIEROWANIE HTTP -> HTTPS (dodawane PO certbocie)

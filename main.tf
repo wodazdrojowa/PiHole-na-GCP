@@ -13,7 +13,7 @@ terraform {
 
 provider "google" {
   project     = var.project_id
-  credentials = file("/mnt/workspace/gcp-key.json")
+  credentials = file(var.gcp_credentials_path)
   region      = var.region
   zone        = var.zone
 }
@@ -43,7 +43,7 @@ resource "google_compute_firewall" "pihole_web" {
 
   allow {
     protocol = "tcp"
-    ports    = ["80", "443"]  # Port 80 potrzebny dla certbota
+    ports    = ["80", "443"]
   }
 
   source_ranges = ["0.0.0.0/0"]
@@ -74,7 +74,7 @@ resource "google_compute_firewall" "pihole_wireguard" {
 
   allow {
     protocol = "udp"
-    ports    = ["443"]
+    ports    = [var.wireguard_port]
   }
 
   source_ranges = ["0.0.0.0/0"]
@@ -104,9 +104,9 @@ resource "google_project_iam_member" "os_login_admin" {
 
 # Compute instance
 resource "google_compute_instance" "pihole" {
-  name           = var.machine_name
-  machine_type   = var.machine_type
-  tags           = ["pihole"]
+  name         = var.machine_name
+  machine_type = var.machine_type
+  tags         = ["pihole"]
   can_ip_forward = true
 
   boot_disk {
@@ -128,7 +128,7 @@ resource "google_compute_instance" "pihole" {
     #!/bin/bash
     apt-get update
     apt-get install -y python3 python3-pip
-  EOF
+    EOF
 
   service_account {
     scopes = ["cloud-platform"]
@@ -137,16 +137,6 @@ resource "google_compute_instance" "pihole" {
   metadata = {
     enable-oslogin = "TRUE"
   }
-}
-
-output "instance_ip" {
-  value       = google_compute_address.pihole_ip.address
-  description = "Public IP address of Pi-hole instance"
-}
-
-output "instance_name" {
-  value       = google_compute_instance.pihole.name
-  description = "Name of the instance"
 }
 
 # Zapis klucza prywatnego do pliku (dla Ansible)
@@ -173,10 +163,5 @@ EOT
 
 # Pobierz dane service account z unique_id
 data "google_service_account" "spacelift" {
-  account_id = "service-account-for-spacelift"
-}
-
-# Zmień output — POSIX username zamiast emaila
-output "os_login_user" {
-  value = "sa_${data.google_service_account.spacelift.unique_id}"
+  account_id = var.spacelift_service_account_id
 }
