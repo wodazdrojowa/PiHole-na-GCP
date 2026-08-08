@@ -102,12 +102,17 @@ resource "google_project_iam_member" "os_login_admin" {
   member  = "user:${var.os_login_user_email}"
 }
 
-# Compute instance
 resource "google_compute_instance" "pihole" {
-  name         = var.machine_name
+  name         = var.use_spot ? "${var.machine_name}-spot" : var.machine_name
   machine_type = var.machine_type
   tags         = ["pihole"]
   can_ip_forward = true
+
+  scheduling {
+    preemptible        = var.use_spot
+    automatic_restart  = !var.use_spot
+    provisioning_model = var.use_spot ? "SPOT" : "STANDARD"
+  }
 
   boot_disk {
     initialize_params {

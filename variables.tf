@@ -25,13 +25,15 @@ variable "ssh_public_key_path" {
 variable "zone" {
   description = "Compute instance zone"
   type        = string
-  default     = "us-central1-a"
+  default     = "europe-central2-a"
+#  default     = "us-central1-a"
 }
 
 variable "region" {
   description = "Compute instance region"
   type        = string
-  default     = "us-central1"
+  default     = "europe-central2"
+#  default     = "us-central1"
 }
 
 variable "project_id" {
@@ -74,4 +76,10 @@ variable "spacelift_service_account_id" {
   description = "GCP Service Account ID for Spacelift"
   type        = string
   default     = "service-account-for-spacelift"
+}
+
+variable "use_spot" {
+  description = "Use spot instance (cheaper, may be preempted). Set to false if spot is unavailable in zone."
+  type        = bool
+  default     = true
 }
