@@ -2,7 +2,9 @@ kod QR dla klienta wireguard generujeszz poleceniem
 sudo su
 # ZAKODUJ KONFIGURACJĘ KLIENTA, nie serwera!
 qrencode -t ansiutf8 < /etc/wireguard/clients/client1.conf
-lub przy braku uprawniwń 
+
+lub przy braku uprawnień 
+
 sudo bash -c 'qrencode -t ansiutf8 < /etc/wireguard/clients/client1.conf'
 
 
